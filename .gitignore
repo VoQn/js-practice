@@ -1,0 +1,7 @@
+# OS
+.DS_Store
+thumb.db
+
+# temporary, swap files
+*.*~
+*.*.swp
