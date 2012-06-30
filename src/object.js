@@ -35,9 +35,12 @@ var isArray = init_isArray();
  * @return {boolean} "typeof x" is Primitive
  */
 function isPrimitive(x) {
+  if (x === null) {
+    return true;
+  }
   var type_expr = typeof x,
       primitives = [
-        'undefined', 'null', 'boolean', 'number', 'string'
+        'undefined', 'boolean', 'number', 'string'
       ],
       i, l;
   for (i = 0, l = primitives.length; i < l; i++) {
