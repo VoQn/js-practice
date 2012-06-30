@@ -6,9 +6,11 @@ if (require) {
       isPrimitive = object_util.isPrimitive,
       isArray = object_util.isArray,
       supplement = object_util.supplement,
+
       expect_module = require('../src/expect'),
       expect = expect_module.expect,
       eq = expect_module.eq,
+
       test_module = require('../src/tester'),
       runTests = test_module.runTests,
       testGroup = test_module.testGroup;
