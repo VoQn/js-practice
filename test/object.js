@@ -15,27 +15,27 @@ if (require) {
 }
 
 runTests(testGroup({
-  'Empty {Object}:x, isEmpty(x) should be true':
+  'Empty {Object}:x, isEmpty(x) => true':
     function () {
       return expect(isEmpty({})).to(eq(true));
     },
-  'Fill Something member {Object}:x, isEmpty(x) should be false':
+  'Fill Something member {Object}:x, isEmpty(x) => false':
     function () {
       return expect(isEmpty({hoge: 0})).to(eq(false));
     },
-  '{undefined}:x, isPrimitive(x) should be true':
+  '{undefined}:x, isPrimitive(x) => true':
     function () {
       return expect(isPrimitive(undefined)).to(eq(true));
     },
-  '{null}:x, isPrimitive(x) should be true':
+  '{null}:x, isPrimitive(x) => true':
     function () {
       return expect(isPrimitive(null)).to(eq(true));
     },
-  '{number}:x, isPrimitive(x) should be true':
+  '{number}:x, isPrimitive(x) => true':
     function () {
       return expect(isPrimitive(0)).to(eq(true));
     },
-  '{boolean}:x, isPrimitive(x) should be true':
+  '{boolean}:x, isPrimitive(x) => true':
     function () {
       return expect(isPrimitive(false)).to(eq(true));
     },
@@ -43,23 +43,23 @@ runTests(testGroup({
     function () {
       return expect(isPrimitive('')).to(eq(true));
     },
-  '{Array}:x, isArray(x) should be true':
+  '{Array}:x, isArray(x) => true':
     function () {
       return expect(isArray([])).to(eq(true));
     },
-  '{Object}:x, isArray(x) should be false':
+  '{Object}:x, isArray(x) => false':
     function () {
       return expect(isArray({})).to(eq(false));
     },
-  'supplement(default) should return default':
+  'supplement(default) => default':
     function () {
       return expect(supplement(10)).to(eq(10));
     },
-  'supplement(default, value) should return value':
+  'supplement(default, value) => value':
     function () {
       return expect(supplement(10, 5)).to(eq(5));
     },
-  'supplement(default, value, callback) should return callback(default, value)':
+  'supplement(default, value, callback) => callback(default, value)':
     function () {
       return expect(supplement(1, -1, Math.max)).to(eq(1));
     }
