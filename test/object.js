@@ -4,6 +4,7 @@ if (require) {
   var object_util = require('../src/object'),
       isEmpty = object_util.isEmpty,
       isPrimitive = object_util.isPrimitive,
+      isArray = object_util.isArray,
       supplement = object_util.supplement,
       expect_module = require('../src/expect'),
       expect = expect_module.expect,
@@ -41,6 +42,14 @@ runTests(testGroup({
   '{string}:x, isPrimitive(x) should be true':
     function () {
       return expect(isPrimitive('')).to(eq(true));
+    },
+  '{Array}:x, isArray(x) should be true':
+    function () {
+      return expect(isArray([])).to(eq(true));
+    },
+  '{Object}:x, isArray(x) should be false':
+    function () {
+      return expect(isArray({})).to(eq(false));
     },
   'supplement(default) should return default':
     function () {
