@@ -1,40 +1,10 @@
+
 'use strict';
 
-/**
- * @return {function(*):boolean} argument value is Array or not
- */
-function init_isArray() {
-  if (Array.isArray) {
-    return Array.isArray;
-  }
-  var isArray = function isArray(x) {
-    return Object.prototype.toString.call(x) === '[object Array]';
-  };
-  return isArray;
-}
-
-/**
- * @param {*} x
- * @return {boolean} x is an Array
- */
-var isArray = init_isArray();
-
-/**
- * @param {*} x
- * @return {boolean} "typeof x" is Primitive
- */
-function isPrimitive(x) {
-  var type_expr = typeof x,
-      primitives = [
-        'undefined', 'null', 'boolean', 'number', 'string'
-      ],
-      i, l;
-  for (i = 0, l = primitives.length; i < l; i++) {
-    if (type_expr === primitives[i]) {
-       return true;
-    }
-  }
-  return false;
+if (require) {
+  var object_util = require('./object'),
+      isArray = object_util.isArray,
+      isPrimitive = object_util.isPrimitive;
 }
 
 /**
@@ -84,7 +54,7 @@ function deepEq(a, b) {
     return a === b;
   }
   // Array
-  if (Array.isArray(a) && Array.isArray(b)) {
+  if (isArray(a) && isArray(b)) {
     if (a.length === b.length) {
       for (i = 0, l = a.length; i < l; i++){
         if (!deepEq(a[i], b[i])) {
@@ -123,3 +93,4 @@ if (typeof exports !== 'undefined') {
   exports.isSameFunction = isSameFunction;
   exports.deepEq = deepEq;
 }
+// EOF

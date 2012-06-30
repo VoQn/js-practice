@@ -1,7 +1,8 @@
 'use strict';
 
 if (require) {
-  var deepEq = require('./eq').deepEq;
+  var supplement = require('./object').supplement,
+      deepEq = require('./eq').deepEq;
 }
 
 /**
@@ -13,11 +14,11 @@ if (require) {
  * @constructor
  */
 function Result(success, expected, actual, reason, exception) {
-  this.success   = success || false;
-  this.expected  = expected  === undefined ? null : expected;
-  this.actual    = actual    === undefined ? null : actual;
-  this.reason    = reason    === undefined ? '<nothing>' : reason;
-  this.exception = exception === undefined ? null : exception;
+  this.success   = supplement(false, success);
+  this.expected  = supplement(null, expected);
+  this.actual    = supplement(null, actual);
+  this.reason    = supplement('<nothing>', reason);
+  this.exception = supplement(null, exception);
 }
 
 /**
