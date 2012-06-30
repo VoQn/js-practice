@@ -6,6 +6,7 @@ if (require) {
       isPrimitive = object_util.isPrimitive,
       isArray = object_util.isArray,
       supplement = object_util.supplement,
+      asArray = object_util.asArray,
 
       expect_module = require('../src/expect'),
       expect = expect_module.expect,
@@ -64,5 +65,42 @@ runTests(testGroup({
   'supplement(default, value, callback) => callback(default, value)':
     function () {
       return expect(supplement(1, -1, Math.max)).to(eq(1));
-    }
+    },
+  'asArray() => []':
+    function () {
+      return expect(asArray()).to(eq([]));
+    },
+  'asArray(null) => []':
+    function () {
+      return expect(asArray(null)).to(eq([]));
+    },
+  'asArray(false) => [false]':
+    function () {
+      return expect(asArray(false)).to(eq([false]));
+    },
+  'asArray(0) => [0]':
+    function () {
+      return expect(asArray(0)).to(eq([0]));
+    },
+  "asArray('') => []":
+    function () {
+      return expect(asArray('')).to(eq([]));
+    },
+  "asArray('foo') => ['foo']":
+    function () {
+      return expect(asArray('foo')).to(eq(['foo']));
+    },
+  'asArray(function (x, y, ... ) { ... }) => []':
+    function () {
+      return expect(asArray(function (x, y) {
+        return x + y;
+      })).to(eq([]));
+    },
+  'asArray(arguments) => [arg1, arg2, arg3, ... ]':
+    function () {
+      function argumentsAsArray() {
+        return expect(asArray(arguments)).to(eq([1, 2, 3]));
+      }
+      return argumentsAsArray(1,2,3);
+    },
 }));
