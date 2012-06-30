@@ -1,20 +1,20 @@
 'use strict';
 
 if (require) {
-  var object_util = require('../src/object'),
-      isEmpty = object_util.isEmpty,
-      isPrimitive = object_util.isPrimitive,
-      isArray = object_util.isArray,
-      supplement = object_util.supplement,
-      asArray = object_util.asArray,
+  var O = require('../src/object'),
+      isEmpty = O.isEmpty,
+      isPrimitive = O.isPrimitive,
+      isArray = O.isArray,
+      supplement = O.supplement,
+      asArray = O.asArray,
 
-      expect_module = require('../src/expect'),
-      expect = expect_module.expect,
-      eq = expect_module.eq,
+      E = require('../src/expect'),
+      expect = E.expect,
+      eq = E.eq,
 
-      test_module = require('../src/tester'),
-      runTests = test_module.runTests,
-      testGroup = test_module.testGroup;
+      T = require('../src/tester'),
+      runTests = T.runTests,
+      testGroup = T.testGroup;
 }
 
 runTests(testGroup({
