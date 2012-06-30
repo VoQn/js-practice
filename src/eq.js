@@ -24,10 +24,13 @@ var isArray = init_isArray();
  * @return {boolean} "typeof x" is Primitive
  */
 function isPrimitive(x) {
-  var t = typeof x, ts = ['undefined', 'null', 'boolean', 'number', 'string'],
+  var type_expr = typeof x,
+      primitives = [
+        'undefined', 'null', 'boolean', 'number', 'string'
+      ],
       i, l;
-  for (i = 0, l = ts.length; i < l; i++) {
-    if (t === ts[i]) {
+  for (i = 0, l = primitives.length; i < l; i++) {
+    if (type_expr === primitives[i]) {
        return true;
     }
   }
@@ -60,7 +63,9 @@ function isSameFunction(a, b) {
   if (a.name !== b.name || a.length !== b.length) {
     return false;
   }
-  return replaceSpaces(a.toString()) === replaceSpaces(b.toString());
+  var as = replaceSpaces(a.toString()),
+      bs = replaceSpaces(b.toString());
+  return as === bs;
 }
 
 /**
@@ -92,7 +97,7 @@ function deepEq(a, b) {
   }
   // Function
   if (typeof a === 'function' && typeof b === 'function') {
-    isSameFunction(a, b);
+    return isSameFunction(a, b);
   }
   // Object
   if (a.constructor === b.constructor) {
