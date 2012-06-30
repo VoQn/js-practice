@@ -85,11 +85,39 @@ function supplement(default_value, opt_arg, opt_callback) {
   return opt_callback(default_value, opt_arg);
 }
 
+/**
+ * @param {*} x
+ * @param {number=} opt_from
+ * @param {number=} opt_to
+ * @return {Array}
+ */
+function asArray(x, opt_from, opt_to) {
+  if (x === null || x === undefined || typeof x === 'function') {
+    return [];
+  }
+  if (typeof x === 'string' && x === '') {
+    return [];
+  }
+  if (isPrimitive(x)) {
+    return [x];
+  }
+  var args = Array.prototype.slice.apply(x),
+      from = supplement(0, opt_from, function (d, v) {
+        return Math.min(v, args.length - 1);
+      }),
+      to = supplement(args.length, opt_to, function (d, v) {
+        return Math.min(d, Math.max(0, v));
+      });
+  return args.slice(from, to);
+}
+
+
 if (typeof exports !== 'undefined') {
   exports.isEmpty = isEmpty;
   exports.isArray = isArray;
   exports.isPrimitive = isPrimitive;
   exports.clone = clone;
   exports.supplement = supplement;
+  exports.asArray = asArray;
 }
 // EOF
