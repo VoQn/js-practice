@@ -74,6 +74,25 @@ Expect.prototype.to = function(should) {
   return should(this.subject);
 };
 
+function _eq(expected, actual) {
+  var is_eq = deepEq(expected, actual);
+  return result({
+    success: is_eq,
+    expected: expected,
+    actual: actual,
+    reason: is_eq ? 'equal' : 'different',
+    exception: null
+  });
+}
+
+/**
+ * @param {*} expected
+ * @return Result
+ */
+Expect.prototype.to_eq = function(expected) {
+  return _eq(expected, this.subject);
+};
+
 /**
  * @param {function(*):Result} should
  * @return Result
@@ -85,6 +104,17 @@ Expect.prototype.not_to = function(should) {
 };
 
 /**
+ * @param {*} expected
+ * @return Result
+ */
+Expect.prototype.not_to_eq = function(expected) {
+  var r = _eq(expected, this.subject);
+  r.success = !r.success;
+  return r;
+};
+
+
+/**
  * @description factory function for Expect instance
  * @param {*} subject
  * @return {Expect}
@@ -93,28 +123,8 @@ function expect(subject) {
   return new Expect(subject);
 }
 
-
-/**
- * @param {*} expected
- * @return {function(*):Result}
- */
-function eq(expected) {
-  function evaluate(actual) {
-    var is_eq = deepEq(expected, actual);
-    return result({
-      success: is_eq,
-      expected: expected,
-      actual: actual,
-      reason: is_eq ? 'same' : 'different',
-      exception: null
-    });
-  }
-  return evaluate;
-}
-
 if (typeof exports !== 'undefined') {
   exports.expect = expect;
-  exports.eq = eq;
   exports.result = result;
 }
 

@@ -5,12 +5,9 @@ if (require) {
       runTests = T.runTests,
       testGroup = T.testGroup,
 
-      E = require('../src/expect'),
-      expect = E.expect,
-      eq = E.eq,
+      expect = require('../src/expect').expect,
 
-      I = require('../src/interface'),
-      Interface = I.Interface;
+      Interface = require('../src/interface').Interface;
 }
 
 var ensure = Interface.ensureImplements;
@@ -31,7 +28,7 @@ runTests(testGroup({
            return 'hoge';
          }
        };
-       return expect(ensure(hoge, HogeInterface)).to(eq(undefined));
+       return expect(ensure(hoge, HogeInterface)).to_eq(undefined);
      },
   'duck typing of two Interfaces':
     function () {
@@ -39,7 +36,7 @@ runTests(testGroup({
         hoge: function () { return 'hoge'; },
         huga: function () { return 'huga'; }
       };
-      return expect(ensure(piyo, HogeInterface, HugaInterface)).to(eq(undefined));
+      return expect(ensure(piyo, HogeInterface, HugaInterface)).to_eq(undefined);
     }
 }));
 // EOF
