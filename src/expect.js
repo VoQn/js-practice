@@ -123,27 +123,8 @@ function expect(subject) {
   return new Expect(subject);
 }
 
-/**
- * @param {*} expected
- * @return {function(*):Result}
- */
-function eq(expected) {
-  function evaluate(actual) {
-    var is_eq = deepEq(expected, actual);
-    return result({
-      success: is_eq,
-      expected: expected,
-      actual: actual,
-      reason: is_eq ? 'same' : 'different',
-      exception: null
-    });
-  }
-  return evaluate;
-}
-
 if (typeof exports !== 'undefined') {
   exports.expect = expect;
-  exports.eq = eq;
   exports.result = result;
 }
 
