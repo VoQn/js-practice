@@ -1,8 +1,13 @@
 'use strict';
 
+var O, supplement, isPrimitive, asArray, deepEq;
+
 if (require) {
-  var supplement = require('./object').supplement,
-      deepEq = require('./eq').deepEq;
+  O = require('./object');
+  supplement = O.supplement;
+  isPrimitive = O.isPrimitive;
+  asArray = O.asArray;
+  deepEq = require('./eq').deepEq;
 }
 
 /**
@@ -63,7 +68,13 @@ function Expect(subject) {
  * @override
  */
 Expect.prototype.toString = function () {
-  return 'Expected<{' + typeof this.subject + '}: ' + this.subject + '>';
+  var t = typeof this.subject, expr, v;
+  if (t === 'function') {
+    return 'Expected<{' + t + '}(' + (this.args || '') + ')>';
+  }
+  expr = isPrimitive(this.subject) ? t : this.subject.constructor.name;
+  v = this.subject.toString();
+  return 'Expected<{' + expr + '}: ' + v + '>';
 };
 
 /**
@@ -90,7 +101,52 @@ function _eq(expected, actual) {
  * @return Result
  */
 Expect.prototype.to_eq = function(expected) {
-  return _eq(expected, this.subject);
+  var actual;
+  if (this.args) {
+    actual = this.subject.apply(null, this.args);
+  } else {
+    actual = this.subject;
+  }
+  return _eq(expected, actual);
+};
+
+/**
+ * @param {...*} var_args
+ * @return Expect
+ */
+Expect.prototype.when_apply = function(var_args) {
+  this.args = asArray(arguments);
+  return this;
+};
+
+/**
+ * @param {Error} error
+ * @return {Result}
+ */
+Expect.prototype.to_throw = function(error) {
+  var applied;
+  try {
+    if (this.args) {
+      applied = this.subject.apply(null, this.args);
+    } else {
+      applied = this.subject();
+    }
+    return result({
+      success: false,
+      expected: error,
+      actual: applied,
+      reason: 'expected throw exception. but nothing thrown.'
+    });
+  } catch (e) {
+    var is_eq = e instanceof error;
+    return result({
+      success: is_eq,
+      expected: error,
+      actual: e,
+      reason: is_eq ? 'expected error catch' : 'unexpected error',
+      exception: e
+    });
+  }
 };
 
 /**
@@ -108,11 +164,16 @@ Expect.prototype.not_to = function(should) {
  * @return Result
  */
 Expect.prototype.not_to_eq = function(expected) {
-  var r = _eq(expected, this.subject);
+  var actual;
+  if (this.args) {
+    actual = this.subject.apply(null, this.args);
+  } else {
+    actual = this.subject;
+  }
+  var r = _eq(expected, actual);
   r.success = !r.success;
   return r;
 };
-
 
 /**
  * @description factory function for Expect instance
