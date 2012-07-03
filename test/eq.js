@@ -2,11 +2,11 @@
 'use strict';
 
 if (require) {
-  var expect = require('../src/expect').expect,
+  var T = require('../src/tester'),
+      runTests = T.runTests,
+      testGroup = T.testGroup,
 
-      test_module = require('../src/tester'),
-      runTests = test_module.runTests,
-      testGroup = test_module.testGroup;
+      expect = require('../src/expect').expect;
 }
 
 runTests(testGroup({
