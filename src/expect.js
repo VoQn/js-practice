@@ -107,7 +107,7 @@ function _eq(expected, actual) {
  */
 Expect.prototype.to_eq = function(expected) {
   var actual;
-  if (this.args) {
+  if (this.args.length) {
     actual = this.subject.apply(null, this.args);
   } else {
     actual = this.subject;
@@ -131,7 +131,7 @@ Expect.prototype.when_apply = function(var_args) {
 Expect.prototype.to_throw = function(error) {
   var applied;
   try {
-    if (this.args) {
+    if (this.args.length) {
       applied = this.subject.apply(null, this.args);
     } else {
       applied = this.subject();
@@ -170,7 +170,7 @@ Expect.prototype.not_to = function(should) {
  */
 Expect.prototype.not_to_eq = function(expected) {
   var actual;
-  if (this.args) {
+  if (this.args.length) {
     actual = this.subject.apply(null, this.args);
   } else {
     actual = this.subject;
