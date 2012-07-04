@@ -28,7 +28,7 @@ runTests(testGroup({
            return 'hoge';
          }
        };
-       return expect(ensure(hoge, HogeInterface)).to_eq(undefined);
+       return expect(ensure).when_apply(hoge, HogeInterface).to_be(true);
      },
   'duck typing of two Interfaces':
     function () {
@@ -36,7 +36,7 @@ runTests(testGroup({
         hoge: function () { return 'hoge'; },
         huga: function () { return 'huga'; }
       };
-      return expect(ensure(piyo, HogeInterface, HugaInterface)).to_eq(undefined);
+      return expect(ensure).when_apply(piyo, HogeInterface, HugaInterface).to_be(true);
     }
 }));
 // EOF

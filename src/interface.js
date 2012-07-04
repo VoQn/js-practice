@@ -28,6 +28,7 @@ function Interface(name, methods) {
  * @param {Object} obj
  * @param {Interface} an_interface
  * @param {...Interface} var_args
+ * @return {boolean}
  */
 Interface.ensureImplements = function (object, an_interface, var_args) {
   var i, j, l, m, method, the_interface;
@@ -53,6 +54,7 @@ Interface.ensureImplements = function (object, an_interface, var_args) {
       }
     }
   }
+  return true;
 };
 
 if (typeof exports !== 'undefined') {
