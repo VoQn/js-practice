@@ -57,10 +57,15 @@ function result(stub) {
 
 /**
  * @param {*} subject
+ * @param {(*)=} opt_args
  * @constructor
  */
-function Expect(subject) {
+function Expect(subject, opt_args) {
+  if (subject === undefined) {
+    throw new Error('constructor Expect require subject parameter');
+  }
   this.subject = subject;
+  this.args = supplement([], opt_args);
 }
 
 /**
@@ -70,7 +75,7 @@ function Expect(subject) {
 Expect.prototype.toString = function () {
   var t = typeof this.subject, expr, v;
   if (t === 'function') {
-    return 'Expected<{' + t + '}(' + (this.args || '') + ')>';
+    return 'Expected<{' + t + '} (' + (this.args.length === 0 ? this.args : '') + ')>';
   }
   expr = isPrimitive(this.subject) ? t : this.subject.constructor.name;
   v = this.subject.toString();
