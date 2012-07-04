@@ -63,21 +63,28 @@ function testGroup(test_cases) {
 }
 
 /**
- * @type {Object}
+ * @constructor
  */
-var view = {
-  /** @type {number} */
-  success: 0,
-  /** @type {number} */
-  failed: 0,
-  /** @type {Array.<string>} */
-  log_buffer: [],
+function TestView() {
+  return this.clear();
+}
+
+TestView.prototype = {
+  /**
+   * @return {TestView}
+   */
+  clear: function () {
+    this.countSuccess = 0;
+    this.countFailed = 0;
+    this.logBuffer = [];
+    return this;
+  },
   /**
    * @param {string} l
    * @param {Result} r
    * @return {string}
    */
-  log: function (l, r) {
+  logging: function (l, r) {
     var ansi_prefix = '\u001b',
         suffix = ansi_prefix + '[0m',
         success = r.success,
@@ -90,30 +97,24 @@ var view = {
                     ('  expected: ' + r.expected + '\n' +
                      '  but got: ' + r.actual + '\n'));
     if (success) {
-      this.success++;
+      this.countSuccess++;
     } else {
-      this.failed++;
+      this.countFailed++;
     }
-    this.log_buffer.push(prefix + log + suffix);
+    this.logBuffer.push(prefix + log + suffix);
     return log;
   },
   /**
    * @description output to console
+   * @return {TextView}
    */
   dump: function () {
-    var i, l, buffer = this.log_buffer;
+    var i, l, buffer = this.logBuffer;
     console.log(buffer.join('\n') + '\n\n' +
-        'success: ' + this.success +
-        ', failed: ' + this.failed +
-        ', total: ' + (this.success + this.failed));
-  },
-  /**
-   * @description cleaning collected scores and log buffer
-   */
-  clear: function () {
-    this.success = 0;
-    this.failed = 0;
-    this.log_buffer = [];
+        'success: ' + this.countSuccess +
+        ', failed: ' + this.countFailed +
+        ', total: ' + (this.countSuccess + this.countFailed));
+    return this;
   }
 };
 
@@ -123,11 +124,10 @@ var view = {
  * @return {Array.<Result>}
  */
 function runTests(test_suite) {
-  var i, l, rs = [];
-  view.clear();
+  var i, l, rs = [], view = new TestView();
   for (i = 0, l = test_suite.length; i < l; i++) {
     rs[i] = test_suite[i].evaluate();
-    view.log(test_suite[i].label, rs[i]);
+    view.logging(test_suite[i].label, rs[i]);
   }
   view.dump();
   return rs;
