@@ -1,15 +1,18 @@
 'use strict';
 
+var E, Subject, expect, Result, result;
+
 if (require) {
-  var expect_module = require('../src/expect'),
-      expect = expect_module.expect,
-      eq = expect_module.eq,
-      result = expect_module.result;
+  E = require('../src/expect');
+  Subject = E.Subject;
+  expect = E.expect;
+  Result = E.Result;
+  result = E.result;
 }
 
 /**
  * @param {string} label
- * @param {function():Result} test
+ * @param {(function():Result)|Subject} test
  * @constructor
  */
 function TestCase(label, test) {
@@ -17,20 +20,29 @@ function TestCase(label, test) {
   this.test = test;
 }
 
-/**
- * @return {Result}
- */
-TestCase.prototype.evaluate = function () {
-  try {
-    return this.test();
-  } catch (e) {
-    return result({
-      success: false,
-      expected: null,
-      actual: null,
-      reason: 'Exception Occured',
-      exception: e
-    });
+TestCase.prototype = {
+  toString: function () {
+    return 'TestCase { label: ' +
+      this.label + ', test: ' + this.test + ' }';
+  },
+  /**
+   * @return {Result}
+   */
+  evaluate: function () {
+    try {
+      if (this.test instanceof Subject) {
+        return this.test.evaluate();
+      }
+      return this.test();
+    } catch (e) {
+      return result({
+        success: false,
+        expected: null,
+        actual: null,
+        reason: 'Exception Occured',
+        exception: e
+      });
+    }
   }
 };
 
@@ -47,19 +59,45 @@ function testCase(label, test) {
  * @return {Array.<TestCase>}
  */
 function testGroup(test_cases) {
-  var i, l, labels, suite = [];
+  var i, l, labels, label, suite = [], t_case;
   if (Array.isArray(test_cases)) {
     for (i = 0, l = test_cases.length; i < l; i++) {
-      suite[i] = new TestCase('case_' + i, test_cases[i]);
+      suite[i] = testCase('case_' + i, test_cases[i]);
     }
     return suite;
   }
-  // test_cases is Object<string, function():Result>
+  // test_cases is Object<string, ((function():Result)|Subject)>
   labels = Object.keys(test_cases);
   for (i = 0, l = labels.length; i < l; i++) {
-    suite[i] = new TestCase(labels[i], test_cases[labels[i]]);
+    label = labels[i];
+    t_case = test_cases[label];
+    suite[i] = testCase(label, t_case);
   }
   return suite;
+}
+
+var ANSI_COLOR = {
+  BLACK: 30,
+  RED: 31,
+  GREEN: 32,
+  YELLOW: 33,
+  BLUE: 34,
+  PURPLE: 35,
+  CYAN: 36,
+  GRAY: 37,
+};
+
+var MARK_CHAR = {
+  PASSED: '\u2713',
+  FAILED: '\u2718',
+  SUN: '\u263c',
+  CLOUD: '\u2601'
+};
+
+function wrapColor(str, color) {
+  var ansi_prefix = '\u001b',
+      suffix = ansi_prefix + '[0m';
+  return ansi_prefix + '[' + color + 'm' + str + suffix;
 }
 
 /**
@@ -84,25 +122,61 @@ TestView.prototype = {
    * @param {Result} r
    * @return {string}
    */
-  logging: function (l, r) {
-    var ansi_prefix = '\u001b',
-        suffix = ansi_prefix + '[0m',
+  _simple_logging: function (l, r) {
+    var color,
         success = r.success,
-        prefix = ansi_prefix + (success ? '[32m\u2713' : '[31m\u2718') + ' ',
-        log = success ? l + ';' :
-                l +
-                  '\nreason: ' + r.reason + '\n' +
-                  (r.exception ?
-                    ('exception: ' + r.exception) :
-                    ('  expected: ' + r.expected + '\n' +
-                     '  but got: ' + r.actual + '\n'));
+        prefix = success ? MARK_CHAR.PASSED : MARK_CHAR.FAILED,
+        log = prefix + ' ' +
+            ( success ? l :
+              l + '\n' + r.toString().replace(/(\{|,|\})/g, '\n').replace(/:/g, '\t| ')
+            );
     if (success) {
       this.countSuccess++;
+      color = ANSI_COLOR.GREEN;
     } else {
       this.countFailed++;
+      color = ANSI_COLOR.RED;
     }
-    this.logBuffer.push(prefix + log + suffix);
-    return log;
+    this.logBuffer.push(wrapColor(log, color));
+    return log; 
+  },
+  /**
+   * @param {string} l
+   * @param {Result} r
+   * @return {string}
+   */
+  logging: function (label, res) {
+    if (res instanceof Result) {
+      return this._simple_logging(label, res);
+    }
+    var countSuccess = 0,
+        countFailed = 0,
+        keys = Object.keys(res),
+        last_index = this.logBuffer.length - 1,
+        i, l, key, r, log, suite_label, c, prefix;
+    for (i = 0, l = keys.length; i < l; i++) {
+      key = keys[i];
+      r = res[key];
+      if (r.success) {
+        countSuccess++;
+        c = ANSI_COLOR.CYAN;
+      } else {
+        countFailed++;
+        c = ANSI_COLOR.RED;
+      }
+      log = this._simple_logging(key, r);
+      this.logBuffer[last_index + i + 1] = '  ' + wrapColor(log.replace(/\n/g, '\n    '), c);
+    }
+    if (countFailed) {
+      suite_label = wrapColor(
+          MARK_CHAR.CLOUD + ' ' + label + ': failed ' + countFailed + ' case',
+          ANSI_COLOR.YELLOW);
+    } else {
+      suite_label = wrapColor(
+          MARK_CHAR.SUN + ' ' + label + ': passed ' + countSuccess + ' case',
+          ANSI_COLOR.GREEN);
+    }
+    this.logBuffer.splice(last_index + 1, 0, suite_label);
   },
   /**
    * @description output to console

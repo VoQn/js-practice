@@ -68,116 +68,99 @@ function Expect(subject, opt_args) {
   this.args = supplement([], opt_args);
 }
 
-/**
- * @return {string}
- * @override
- */
-Expect.prototype.toString = function () {
-  var t = typeof this.subject, expr, v;
-  if (t === 'function') {
-    return 'Expected<{' + t + '} (' + (this.args.length === 0 ? this.args : '') + ')>';
-  }
-  expr = isPrimitive(this.subject) ? t : this.subject.constructor.name;
-  v = this.subject.toString();
-  return 'Expected<{' + expr + '}: ' + v + '>';
-};
-
-/**
- * @param {function(*):Result} should
- * @return Result
- */
-Expect.prototype.to = function(should) {
-  return should(this.subject);
-};
-
-function _eq(expected, actual) {
-  var is_eq = deepEq(expected, actual);
-  return result({
-    success: is_eq,
-    expected: expected,
-    actual: actual,
-    reason: is_eq ? 'equal' : 'different',
-    exception: null
-  });
-}
-
-/**
- * @param {*} expected
- * @return Result
- */
-Expect.prototype.to_eq = function(expected) {
-  var actual;
-  if (this.args.length) {
-    actual = this.subject.apply(null, this.args);
-  } else {
-    actual = this.subject;
-  }
-  return _eq(expected, actual);
-};
-
-/**
- * @param {...*} var_args
- * @return Expect
- */
-Expect.prototype.when_apply = function(var_args) {
-  this.args = asArray(arguments);
-  return this;
-};
-
-/**
- * @param {Error} error
- * @return {Result}
- */
-Expect.prototype.to_throw = function(error) {
-  var applied;
-  try {
-    if (this.args.length) {
-      applied = this.subject.apply(null, this.args);
+Expect.prototype = {
+  /**
+   * @return {string}
+   * @override
+   */
+  toString: function () {
+    var t = typeof this.subject, expr, v;
+    if (t === 'function') {
+      return 'Expected<{' + t + '} (' + (this.args.length === 0 ? this.args : '') + ')>';
+    }
+    expr = isPrimitive(this.subject) ? t : this.subject.constructor.name;
+    v = this.subject.toString();
+    return 'Expected<{' + expr + '}: ' + v + '>';
+  },
+  /**
+   * @param {...*} var_args
+   * @return Expect
+   */
+  when_apply: function (var_args) {
+    this.args = asArray(arguments);
+    return this;
+  },
+  /**
+   * @param {Error} error
+   * @return {Result}
+   */
+  to_throw: function (error) {
+    var applied;
+    try {
+      if (this.args.length) {
+        applied = this.subject.apply(null, this.args);
+      } else {
+        applied = this.subject();
+      }
+      return result({
+        success: false,
+        expected: error,
+        actual: applied,
+        reason: 'expected throw exception. but nothing thrown.'
+      });
+    } catch (e) {
+      var is_eq = e instanceof error;
+      return result({
+        success: is_eq,
+        expected: error,
+        actual: e,
+        reason: is_eq ? 'expected error catch' : 'unexpected error',
+        exception: e
+      });
+    }
+  },
+  /**
+   * @param {*} expected
+   * @return {Result}
+   */
+  to_be: function (expected) {
+    var actual = null,
+        exception = null,
+        success = false,
+        reason = '';
+    if (typeof this.subject === 'function' && this.args.length) {
+      try {
+        actual = this.subject.apply(null, this.args);
+        success = deepEq(expected, actual);
+        reason = success ? 'same' : 'different';
+      } catch (e) {
+        exception = e;
+        reason = 'unexpected exception: (' + e + ')';
+      }
     } else {
-      applied = this.subject();
+      actual = this.subject;
+      success = deepEq(expected, actual);
+      reason = success ? 'same' : 'different';
     }
     return result({
-      success: false,
-      expected: error,
-      actual: applied,
-      reason: 'expected throw exception. but nothing thrown.'
+      success: success,
+      expected: expected,
+      actual: actual,
+      reason: reason,
+      exception: exception
     });
-  } catch (e) {
-    var is_eq = e instanceof error;
-    return result({
-      success: is_eq,
-      expected: error,
-      actual: e,
-      reason: is_eq ? 'expected error catch' : 'unexpected error',
-      exception: e
-    });
+  },
+  /**
+   * @param {*} expected
+   * @return {Result}
+   */
+  not_to_be: function (expected) {
+    var r = this.to_be(expected);
+    if (!r.exception) {
+      r.success = !r.success;
+    }
+    return r;
   }
-};
-
-/**
- * @param {function(*):Result} should
- * @return Result
- */
-Expect.prototype.not_to = function(should) {
-  var r = should(this.subject);
-  r.success = !r.success;
-  return r;
-};
-
-/**
- * @param {*} expected
- * @return Result
- */
-Expect.prototype.not_to_eq = function(expected) {
-  var actual;
-  if (this.args.length) {
-    actual = this.subject.apply(null, this.args);
-  } else {
-    actual = this.subject;
-  }
-  var r = _eq(expected, actual);
-  r.success = !r.success;
-  return r;
 };
 
 /**
@@ -189,9 +172,49 @@ function expect(subject) {
   return new Expect(subject);
 }
 
+function Subject(target, expects) {
+  this.target = target;
+  this.expects = expects;
+}
+
+Subject.prototype = {
+  /**
+   * @return {string}
+   * @override
+   */
+  toString: function () {
+    return 'Subject { target:' +
+            this.target +
+            ', expects: ' +
+            this.expects +
+            '}';
+  },
+  evaluate: function () {
+    var topic = expect(this.target),
+        keys = Object.keys(this.expects),
+        rs = {},
+        i, l, key;
+    if (typeof this.target === 'function') {
+      topic = topic.when_apply.bind(topic);
+    }
+    for (i = 0, l = keys.length; i < l; i++) {
+      key = keys[i];
+      rs[key] = this.expects[key](topic);
+    }
+    return rs;
+  }
+};
+
+function subject(target, expects) {
+  return new Subject(target, expects);
+}
+
 if (typeof exports !== 'undefined') {
   exports.expect = expect;
+  exports.Result = Result;
   exports.result = result;
+  exports.Subject = Subject;
+  exports.subject = subject;
 }
 
 // EOF

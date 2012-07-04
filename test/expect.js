@@ -32,10 +32,10 @@ runTests(testGroup({
     },
   'when subject call as function with arguments, return result':
     function () {
-      return expect(makeArray).when_apply(1, 2, 3).to_eq([1, 2, 3]);
+      return expect(makeArray).when_apply(1, 2, 3).to_be([1, 2, 3]);
     },
   'if not need seperate function and arguments, can direct call and assert':
     function () {
-      return expect(makeArray(1, 2, 3)).to_eq([1, 2, 3]);
+      return expect(makeArray(1, 2, 3)).to_be([1, 2, 3]);
     }
 }));
