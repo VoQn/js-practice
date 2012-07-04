@@ -1,10 +1,12 @@
 
 'use strict';
 
+var O, isArray, isPrimitive;
+
 if (require) {
-  var object_util = require('./object'),
-      isArray = object_util.isArray,
-      isPrimitive = object_util.isPrimitive;
+  O = require('./object');
+  isArray = O.isArray;
+  isPrimitive = O.isPrimitive;
 }
 
 /**
