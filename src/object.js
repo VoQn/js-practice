@@ -2,8 +2,8 @@
 'use strict';
 
 /**
- * @param {!Object} x
- * @return {boolean} parameter is empty object or not
+ * @param {!Object} x value.
+ * @return {boolean} parameter is empty object or not.
  */
 function isEmpty(x) {
   return x === undefined ||
@@ -12,27 +12,27 @@ function isEmpty(x) {
 }
 
 /**
- * @return {function(*):boolean} argument value is Array or not
+ * @return {function(*):boolean} argument value is Array or not.
  */
 function init_isArray() {
   if (Array.isArray) {
     return Array.isArray;
   }
-  var isArray = function isArray(x) {
-    return Object.prototype.toString.call(x) === '[object Array]';
-  };
-  return isArray;
+  function is_array(any) {
+    return Object.prototype.toString.call(any) === '[object Array]';
+  }
+  return is_array;
 }
 
 /**
- * @param {*} x
- * @return {boolean} x is an Array
+ * @param {*} any value.
+ * @return {boolean} x is an Array.
  */
 var isArray = init_isArray();
 
 /**
- * @param {*} x
- * @return {boolean} "typeof x" is Primitive
+ * @param {*} x any value.
+ * @return {boolean} "typeof x" is Primitive.
  */
 function isPrimitive(x) {
   if (x === null) {
@@ -52,9 +52,8 @@ function isPrimitive(x) {
 }
 
 /**
- * @description Object clone
- * @param {!Object} x
- * @return {Object}
+ * @param {!Object} x any object.
+ * @return {Object} copied new object.
  */
 function clone(x) {
   var copied = Object.create(x),
@@ -69,11 +68,11 @@ function clone(x) {
 }
 
 /**
- * @description supplement default value or value modified by optional callback
- * @param {*} default_value
- * @param {*=} opt_arg
- * @param {(function(*,*):*)=} opt_callback
- * @return {*}
+ * @param {*} default_value instead of opt_arg.
+ * @param {*=} opt_arg argument by called original function.
+ * @param {(function(*,*):*)=} opt_callback optional modifier.
+ * @return {*} supplemented default value,
+ * or value modified by optional callback.
  */
 function supplement(default_value, opt_arg, opt_callback) {
   if (opt_arg === undefined) {
@@ -86,10 +85,10 @@ function supplement(default_value, opt_arg, opt_callback) {
 }
 
 /**
- * @param {*} x
- * @param {number=} opt_from
- * @param {number=} opt_to
- * @return {Array}
+ * @param {*} x any object.
+ * @param {number=} opt_from slice begin index.
+ * @param {number=} opt_to slice end index.
+ * @return {Array} x to array.
  */
 function asArray(x, opt_from, opt_to) {
   if (x === null || x === undefined || typeof x === 'function') {
@@ -102,10 +101,10 @@ function asArray(x, opt_from, opt_to) {
     return [x];
   }
   var args = Array.prototype.slice.apply(x),
-      from = supplement(0, opt_from, function (d, v) {
+      from = supplement(0, opt_from, function(d, v) {
         return Math.min(v, args.length - 1);
       }),
-      to = supplement(args.length, opt_to, function (d, v) {
+      to = supplement(args.length, opt_to, function(d, v) {
         return Math.min(d, Math.max(0, v));
       });
   return args.slice(from, to);
@@ -113,11 +112,22 @@ function asArray(x, opt_from, opt_to) {
 
 
 if (typeof exports !== 'undefined') {
+  /** @type {function(*):boolean} */
   exports.isEmpty = isEmpty;
+
+  /** @type {function(*):boolean} */
   exports.isArray = isArray;
+
+  /** @type {function(*):boolean} */
   exports.isPrimitive = isPrimitive;
+
+  /** @type {function(*):*} */
   exports.clone = clone;
+
+  /** @type {function(*, (*)=, (function(*,*):*)=} */
   exports.supplement = supplement;
+
+  /** @type {function(*, number=, number=):Array} */
   exports.asArray = asArray;
 }
 // EOF

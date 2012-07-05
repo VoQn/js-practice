@@ -11,8 +11,8 @@ if (require) {
 }
 
 /**
- * @param {string} label
- * @param {(function():Result)|Subject} test
+ * @param {string} label of test case.
+ * @param {(function():Result)|Subject} test callback or test subject.
  * @constructor
  */
 function TestCase(label, test) {
@@ -21,14 +21,15 @@ function TestCase(label, test) {
 }
 
 TestCase.prototype = {
-  toString: function () {
+  toString: function() {
     return 'TestCase { label: ' +
       this.label + ', test: ' + this.test + ' }';
   },
   /**
-   * @return {Result}
+   * @this {TestCase}
+   * @return {Result} of evaluated test case.
    */
-  evaluate: function () {
+  evaluate: function() {
     try {
       if (this.test instanceof Subject) {
         return this.test.evaluate();
@@ -46,17 +47,16 @@ TestCase.prototype = {
   }
 };
 
-/**
- * @description factory function for TestCase instance
- * @return {TestCase}
+/*
+ * factory function for TestCase instance
  */
 function testCase(label, test) {
   return new TestCase(label, test);
 }
 
 /**
- * @param {Array|Object} test_cases
- * @return {Array.<TestCase>}
+ * @param {Array|Object} test_cases array or hash.
+ * @return {Array.<TestCase>} test suite.
  */
 function testGroup(test_cases) {
   var i, l, labels, label, suite = [], t_case;
@@ -84,7 +84,7 @@ var ANSI_COLOR = {
   BLUE: 34,
   PURPLE: 35,
   CYAN: 36,
-  GRAY: 37,
+  GRAY: 37
 };
 
 var MARK_CHAR = {
@@ -109,26 +109,29 @@ function TestView() {
 
 TestView.prototype = {
   /**
-   * @return {TestView}
+   * @this {TestView}
+   * @return {TestView} formated test view.
    */
-  clear: function () {
+  clear: function() {
     this.countSuccess = 0;
     this.countFailed = 0;
     this.logBuffer = [];
     return this;
   },
   /**
-   * @param {string} l
-   * @param {Result} r
-   * @return {string}
+   * @this {TestView}
+   * @param {string} l label of test case.
+   * @param {Result} r result of test case.
+   * @return {string} test log.
    */
-  _simple_logging: function (l, r) {
+  _simple_logging: function(l, r) {
     var color,
         success = r.success,
         prefix = success ? MARK_CHAR.PASSED : MARK_CHAR.FAILED,
         log = prefix + ' ' +
-            ( success ? l :
-              l + '\n' + r.toString().replace(/(\{|,|\})/g, '\n').replace(/:/g, '\t| ')
+            (success ? l :
+              l + '\n' +
+              r.toString().replace(/(\{|,|\})/g, '\n').replace(/:/g, '\t| ')
             );
     if (success) {
       this.countSuccess++;
@@ -138,16 +141,18 @@ TestView.prototype = {
       color = ANSI_COLOR.RED;
     }
     this.logBuffer.push(wrapColor(log, color));
-    return log; 
+    return log;
   },
   /**
-   * @param {string} l
-   * @param {Result} r
-   * @return {string}
+   * @this {TestView}
+   * @param {string} l label of test case.
+   * @param {Result|Object.<string, Result>} r result of test case,
+   * or results of test suites.
    */
-  logging: function (label, res) {
+  logging: function(label, res) {
     if (res instanceof Result) {
-      return this._simple_logging(label, res);
+      this._simple_logging(label, res);
+      return;
     }
     var countSuccess = 0,
         countFailed = 0,
@@ -165,7 +170,8 @@ TestView.prototype = {
         c = ANSI_COLOR.RED;
       }
       log = this._simple_logging(key, r);
-      this.logBuffer[last_index + i + 1] = '  ' + wrapColor(log.replace(/\n/g, '\n    '), c);
+      this.logBuffer[last_index + i + 1] = '  ' +
+        wrapColor(log.replace(/\n/g, '\n    '), c);
     }
     if (countFailed) {
       suite_label = wrapColor(
@@ -179,10 +185,11 @@ TestView.prototype = {
     this.logBuffer.splice(last_index + 1, 0, suite_label);
   },
   /**
-   * @description output to console
-   * @return {TextView}
+   * output to console
+   * @this {TestView}
+   * @return {TextView} itself.
    */
-  dump: function () {
+  dump: function() {
     var i, l, buffer = this.logBuffer;
     console.log(buffer.join('\n') + '\n\n' +
         'success: ' + this.countSuccess +
@@ -193,9 +200,8 @@ TestView.prototype = {
 };
 
 /**
- * @description evaluate for each Test Suites
- * @param {Array.<TestCase>} test_suites
- * @return {Array.<Result>}
+ * @param {Array.<TestCase>} test_suite hash object.
+ * @return {Array.<Result>} for each evaluated value from test_suites.
  */
 function runTests(test_suite) {
   var i, l, rs = [], view = new TestView();
@@ -208,7 +214,12 @@ function runTests(test_suite) {
 }
 
 if (typeof exports !== 'undefined') {
+  /** @type {function():Array} */
   exports.runTests = runTests;
+
+  /** @type {function(string, (function():Result|Subject)): TestCase} */
   exports.testCase = testCase;
+
+  /** @type {function(Array.<TestCase>):Array.<Result>} */
   exports.testGroup = testGroup;
 }

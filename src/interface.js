@@ -2,8 +2,8 @@
 'use strict';
 
 /**
- * @param {string} name
- * @param {Array.<string>} methods
+ * @param {string} name of interface.
+ * @param {Array.<string>} methods of interface.
  * @constructor
  */
 function Interface(name, methods) {
@@ -25,17 +25,17 @@ function Interface(name, methods) {
 }
 
 /**
- * @param {Object} obj
- * @param {Interface} an_interface
- * @param {...Interface} var_args
- * @return {boolean}
+ * @param {Object} object implements of interfaces.
+ * @param {Interface} an_interface of object.
+ * @param {...Interface} var_args of others interfaces.
+ * @return {boolean} is object implements all interfaces or not.
  */
-Interface.ensureImplements = function (object, an_interface, var_args) {
+Interface.ensureImplements = function(object, an_interface, var_args) {
   var i, j, l, m, method, the_interface;
   if (arguments.length < 2) {
-    throw new Error('Function Interface.ensureImplements called with ' +
-        arguments.length +
-        'arguments, but expected at least 2.');
+    throw new Error('Function Interface.ensureImplements ' +
+        'called with ' + arguments.length + 'arguments, ' +
+        'but expected at least 2.');
   }
   for (i = 1, l = arguments.length; i < l; i++) {
     the_interface = arguments[i];
@@ -58,6 +58,7 @@ Interface.ensureImplements = function (object, an_interface, var_args) {
 };
 
 if (typeof exports !== 'undefined') {
+  /** @type {function(string, Object.<string, function()>):Interface} */
   exports.Interface = Interface;
 }
 
