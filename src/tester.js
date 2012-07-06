@@ -1,13 +1,15 @@
 'use strict';
 
-var E, Subject, expect, Result, result;
+var E, S, Subject, expect, R, Result, result;
 
 if (require) {
   E = require('../src/expect');
-  Subject = E.Subject;
+  S = require('../src/subject');
+  R = require('../src/result');
+  Subject = S.Subject;
   expect = E.expect;
-  Result = E.Result;
-  result = E.result;
+  Result = R.Result;
+  result = R.result;
 }
 
 /**

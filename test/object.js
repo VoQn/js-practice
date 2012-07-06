@@ -1,7 +1,7 @@
 'use strict';
 
 var O, isEmpty, isPrimitive, isArray, supplement, asArray,
-    E, expect, subject,
+    subject,
     T, runTests, testGroup;
 
 if (require) {
@@ -12,8 +12,7 @@ if (require) {
   supplement = O.supplement;
   asArray = O.asArray;
 
-  E = require('../src/expect');
-  subject = E.subject;
+  subject = require('../src/subject').subject;
 
   T = require('../src/tester');
   runTests = T.runTests;

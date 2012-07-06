@@ -1,57 +1,18 @@
 'use strict';
 
-var O, supplement, isPrimitive, asArray, deepEq;
+var O, supplement, isPrimitive, asArray,
+    Eq, deepEq,
+    R, result;
 
 if (require) {
   O = require('./object');
+  R = require('./result');
+  Eq = require('./eq');
   supplement = O.supplement;
   isPrimitive = O.isPrimitive;
   asArray = O.asArray;
-  deepEq = require('./eq').deepEq;
-}
-
-/**
- * @param {boolean} success succeeded or not.
- * @param {*} expected return value.
- * @param {*} actual return value.
- * @param {string} reason why test was succeeded or failed.
- * @param {Error} exception thrown.
- * @constructor
- */
-function Result(success, expected, actual, reason, exception) {
-  this.success = supplement(false, success);
-  this.expected = supplement(null, expected);
-  this.actual = supplement(null, actual);
-  this.reason = supplement('<nothing>', reason);
-  this.exception = supplement(null, exception);
-}
-
-/**
- * @return {string} expression of instance.
- * @override
- */
-Result.prototype.toString = function() {
-  return 'Result { success:' + this.success +
-                ', expected:' + this.expected +
-                ', actual:' + this.actual +
-                ', reason:' + this.reason +
-                ', exception:' + (this.exception || 'none') +
-                '}';
-};
-
-/**
- * @param {Object} stub parameter hash.
- * @return {Result} instance from stub parameter.
- */
-function result(stub) {
-  var r = new Result(),
-      keys = Object.keys(stub),
-      i, k, l;
-  for (i = 0, l = keys.length; i < l; i++) {
-    k = keys[i];
-    r[k] = stub[k];
-  }
-  return r;
+  result = R.result;
+  deepEq = Eq.deepEq;
 }
 
 /**
@@ -177,71 +138,8 @@ function expect(subject, opt_args) {
   return new Expect(subject, opt_args);
 }
 
-/**
- * @param {*} target object.
- * @param {Object} expects test suite.
- * @constructor
- */
-function Subject(target, expects) {
-  this.target = target;
-  this.expects = expects;
-}
-
-Subject.prototype = {
-  /**
-   * @this {Subject}
-   * @return {string} expression of instance.
-   * @override
-   */
-  toString: function() {
-    return 'Subject { target:' +
-            this.target +
-            ', expects: ' +
-            this.expects +
-            '}';
-  },
-  /**
-   * @this {Subject}
-   * @return {Object} results of test suite.
-   */
-  evaluate: function() {
-    var topic = expect(this.target),
-        keys = Object.keys(this.expects),
-        rs = {},
-        i, l, key;
-    if (typeof this.target === 'function') {
-      topic = topic.when_apply.bind(topic);
-    }
-    for (i = 0, l = keys.length; i < l; i++) {
-      key = keys[i];
-      rs[key] = this.expects[key](topic);
-    }
-    return rs;
-  }
-};
-
-/*
- * factory function for Expect instance
- */
-function subject(target, expects) {
-  return new Subject(target, expects);
-}
-
 if (typeof exports !== 'undefined') {
   /** @type {function(*, Array):Expect} */
   exports.expect = expect;
-
-  /** @type {function(boolean, *, *, string, Error):Result} */
-  exports.Result = Result;
-
-  /** @type {function(boolean, *, *, string, Error):Result} */
-  exports.result = result;
-
-  /** @type {function(*, Object):Subject} */
-  exports.Subject = Subject;
-
-  /** @type {function(*, Object):Subject} */
-  exports.subject = subject;
 }
-
 // EOF

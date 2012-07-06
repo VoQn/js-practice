@@ -1,7 +1,7 @@
 'use strict';
 
 var T, runTests, testGroup,
-    E, expect, subject,
+    subject,
     Interface,
     HogeInterface, HugaInterface,
     hoge, piyo;
@@ -11,9 +11,7 @@ if (require) {
   runTests = T.runTests;
   testGroup = T.testGroup;
 
-  E = require('../src/expect');
-  expect = E.expect;
-  subject = E.subject;
+  subject = require('../src/subject').subject;
 
   Interface = require('../src/interface').Interface;
 }

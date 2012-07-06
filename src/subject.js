@@ -64,5 +64,4 @@ if (typeof exports !== 'undefined') {
   /** @type {function(*, Object):Subject} */
   exports.subject = subject;
 }
-
 // EOF

@@ -14,7 +14,7 @@ if (require) {
 
   E = require('../src/expect');
   expect = E.expect;
-  subject = E.subject;
+  subject = require('../src/subject').subject;
 
   T = require('../src/tester');
   runTests = T.runTests;
