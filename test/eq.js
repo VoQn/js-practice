@@ -10,15 +10,12 @@ if (require) {
 }
 
 runTests(testGroup({
-  '1 and 1.0 is same number': function() {
-    return expect(1).to_be(1.0);
-  },
-  '[1, 2, 3] and [1, 2, 3] is same array': function() {
-    return expect([1, 2, 3]).to_be([1, 2, 3]);
-  },
-  "[[1],[2,3]] and [[1,2],[3]] isn't same": function() {
-    return expect([[1], [2, 3]]).not_to_be([[1, 2], [3]]);
-  },
+  '1 and 1.0 is same number':
+    expect(1).to_be(1.0),
+  '[1, 2, 3] and [1, 2, 3] is same array':
+    expect([1, 2, 3]).to_be([1, 2, 3]),
+  "[[1],[2,3]] and [[1,2],[3]] isn't same":
+    expect([[1], [2, 3]]).not_to_be([[1, 2], [3]]),
   'two same function is same': function() {
     var i = function() {
       return 'test';

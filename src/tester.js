@@ -36,7 +36,13 @@ TestCase.prototype = {
       if (this.test instanceof Subject) {
         return this.test.evaluate();
       }
-      return this.test();
+      if (this.test instanceof Result) {
+        return this.test;
+      }
+      if (typeof this.test === 'function') {
+        return this.test();
+      }
+      return this.test;
     } catch (e) {
       return result({
         success: false,
