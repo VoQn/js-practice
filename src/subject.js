@@ -48,7 +48,7 @@ Subject.prototype = {
       if (exp instanceof Topic) {
         rs[key] = exp.apply(topic);
       } else if (typeof exp === 'function') {
-        rs[key] = exp(topic.when_apply.bind(topic));
+        rs[key] = exp(this.target);
       } else {
         rs[key] = exp;
       }
@@ -104,6 +104,7 @@ Topic.prototype = {
     this.current_callback = function(sbj) {
       return sbj.when_apply.apply(sbj, args).not_to_be(unexpected);
     }
+    return this;
   }
 };
 
