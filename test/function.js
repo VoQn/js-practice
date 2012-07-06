@@ -26,13 +26,13 @@ function add2Number(x, y) {
 }
 
 runTests(testGroup({
-  'id(x) => x': function () {
+  'id(x) => x': function() {
       return expect(id(10)).to_be(10);
     },
-  'seq(x, y) => y': function () {
+  'seq(x, y) => y': function() {
       return expect(seq(5, 10)).to_be(10);
     },
-  'force(promise) => promise()': function () {
+  'force(promise) => promise()': function() {
       function p() {
         return 5 + 5; // 10
       }
@@ -40,25 +40,25 @@ runTests(testGroup({
     },
   'function apply(arg, ...var_args)': subject(apply,
     {
-      '(-10)(Math.abs) => 10': function () {
+      '(-10)(Math.abs) => 10': function() {
         return expect(apply(-10)(Math.abs)).to_be(10);
       },
-      '(10, 2)(Math.pow) => 100': function (topic) {
+      '(10, 2)(Math.pow) => 100': function(topic) {
         return expect(apply(10, 2)(Math.pow)).to_be(100);
       }
     }),
   'function curry(function, ...var_args)': subject(curry,
     {
-      '((x, y) -> x + y)(3)(7) => 10': function () {
+      '((x, y) -> x + y)(3)(7) => 10': function() {
         return expect(curry(add2Number)(3)(7)).to_be(10);
       },
-      '((x, y) -> x + y)(3, 7) => 10': function () {
+      '((x, y) -> x + y)(3, 7) => 10': function() {
         return expect(curry(add2Number)(3, 7)).to_be(10);
       },
-      '(((x, y) -> x + y), 3)(7) => 10': function () {
+      '(((x, y) -> x + y), 3)(7) => 10': function() {
         return expect(curry(add2Number, 3)(7)).to_be(10);
       },
-      '(((x, y) -> x + y), 3, 7) => 10': function () {
+      '(((x, y) -> x + y), 3, 7) => 10': function() {
         return expect(curry(add2Number, 3, 7)).to_be(10);
       }
     })
