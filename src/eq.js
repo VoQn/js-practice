@@ -1,4 +1,3 @@
-
 'use strict';
 
 var O, isArray, isPrimitive;
@@ -10,9 +9,9 @@ if (require) {
 }
 
 /**
- * @description format function.toString()
- * @param {string} expr
- * @return {string}
+ * format function.toString()
+ * @param {string} expr String of function.
+ * @return {string} format function expression.
  */
 function replaceSpaces(expr) {
   return expr.replace(/\s*\{\s*/,
@@ -23,10 +22,9 @@ function replaceSpaces(expr) {
 }
 
 /**
- * @description two function object are same meaning or not
- * @param {function(...*):*} a
- * @param {function(...*):*} b
- * @return {boolean}
+ * @param {function(...*):*} a function object.
+ * @param {function(...*):*} b function object.
+ * @return {boolean} a & b is same meaning or not.
  */
 function isSameFunction(a, b) {
   if (a === b) {
@@ -41,9 +39,9 @@ function isSameFunction(a, b) {
 }
 
 /**
- * @param {*} a
- * @param {*} b
- * @return {boolean}
+ * @param {*} a something object.
+ * @param {*} b something object.
+ * @return {boolean} a & b are same object.
  */
 function deepEq(a, b) {
   var i, l, a_ps, b_ps;
@@ -58,7 +56,7 @@ function deepEq(a, b) {
   // Array
   if (isArray(a) && isArray(b)) {
     if (a.length === b.length) {
-      for (i = 0, l = a.length; i < l; i++){
+      for (i = 0, l = a.length; i < l; i++) {
         if (!deepEq(a[i], b[i])) {
           return false;
         }
@@ -89,10 +87,19 @@ function deepEq(a, b) {
 }
 
 if (typeof exports !== 'undefined') {
+  /** @type {function(*):boolean} */
   exports.isArray = isArray;
+
+  /** @type {function(*):boolean} */
   exports.isPrimitive = isPrimitive;
+
+  /** @type {function(*):replaceSpaces} */
   exports.replaceSpaces = replaceSpaces;
+
+  /** @type {function(function(...*):*, function(...*):*): boolean} */
   exports.isSameFunction = isSameFunction;
+
+  /** @type {function(*,*):boolean} */
   exports.deepEq = deepEq;
 }
 // EOF

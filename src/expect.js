@@ -1,63 +1,23 @@
 'use strict';
 
-var O, supplement, isPrimitive, asArray, deepEq;
+var O, supplement, isPrimitive, asArray,
+    Eq, deepEq,
+    R, result;
 
 if (require) {
   O = require('./object');
+  R = require('./result');
+  Eq = require('./eq');
   supplement = O.supplement;
   isPrimitive = O.isPrimitive;
   asArray = O.asArray;
-  deepEq = require('./eq').deepEq;
+  result = R.result;
+  deepEq = Eq.deepEq;
 }
 
 /**
- * @param {boolean} success
- * @param {*} expected
- * @param {*} actual
- * @param {string} reason
- * @param {Error} exception
- * @constructor
- */
-function Result(success, expected, actual, reason, exception) {
-  this.success   = supplement(false, success);
-  this.expected  = supplement(null, expected);
-  this.actual    = supplement(null, actual);
-  this.reason    = supplement('<nothing>', reason);
-  this.exception = supplement(null, exception);
-}
-
-/**
- * @return {string}
- * @override
- */
-Result.prototype.toString = function () {
-  return 'Result { success:' + this.success +
-                ', expected:' + this.expected +
-                ', actual:' + this.actual +
-                ', reason:' + this.reason +
-                ', exception:' + (this.exception || 'none') +
-                '}';
-};
-
-/**
- * @description factory function for Result instance
- * @param {Object} stub
- * @return {Result}
- */
-function result(stub) {
-  var r = new Result(),
-      keys = Object.keys(stub),
-      i, k, l;
-  for (i = 0, l = keys.length; i < l; i++) {
-    k = keys[i];
-    r[k] = stub[k];
-  }
-  return r;
-}
-
-/**
- * @param {*} subject
- * @param {(*)=} opt_args
+ * @param {*} subject of test case.
+ * @param {Array=} opt_args if subject if a function, applied this.
  * @constructor
  */
 function Expect(subject, opt_args) {
@@ -70,31 +30,37 @@ function Expect(subject, opt_args) {
 
 Expect.prototype = {
   /**
-   * @return {string}
+   * @this {Expect}
+   * @return {string} expression of instance.
    * @override
    */
-  toString: function () {
+  toString: function() {
     var t = typeof this.subject, expr, v;
     if (t === 'function') {
-      return 'Expected<{' + t + '} (' + (this.args.length === 0 ? this.args : '') + ')>';
+      return 'Expected<{' + t +
+          '} (' +
+             (this.args.length === 0 ? this.args : '') +
+          ')>';
     }
     expr = isPrimitive(this.subject) ? t : this.subject.constructor.name;
     v = this.subject.toString();
     return 'Expected<{' + expr + '}: ' + v + '>';
   },
   /**
-   * @param {...*} var_args
-   * @return Expect
+   * @this {Expect}
+   * @param {...*} var_args apply as argument of subject function.
+   * @return {Expect} itself.
    */
-  when_apply: function (var_args) {
+  when_apply: function(var_args) {
     this.args = asArray(arguments);
     return this;
   },
   /**
-   * @param {Error} error
-   * @return {Result}
+   * @this {Expected}
+   * @param {Error} error object should thrown.
+   * @return {Result} error has been thrown or not.
    */
-  to_throw: function (error) {
+  to_throw: function(error) {
     var applied;
     try {
       if (this.args.length) {
@@ -120,10 +86,11 @@ Expect.prototype = {
     }
   },
   /**
-   * @param {*} expected
-   * @return {Result}
+   * @this {Expected}
+   * @param {*} expected value.
+   * @return {Result} subject has been expected value or not.
    */
-  to_be: function (expected) {
+  to_be: function(expected) {
     var actual = null,
         exception = null,
         success = false,
@@ -151,11 +118,12 @@ Expect.prototype = {
     });
   },
   /**
-   * @param {*} expected
-   * @return {Result}
+   * @this {Expected}
+   * @param {*} unexpected value.
+   * @return {Result} subject has been not expected value.
    */
-  not_to_be: function (expected) {
-    var r = this.to_be(expected);
+  not_to_be: function(unexpected) {
+    var r = this.to_be(unexpected);
     if (!r.exception) {
       r.success = !r.success;
     }
@@ -163,58 +131,15 @@ Expect.prototype = {
   }
 };
 
-/**
- * @description factory function for Expect instance
- * @param {*} subject
- * @return {Expect}
+/*
+ * factory function for Expect instance
  */
-function expect(subject) {
-  return new Expect(subject);
-}
-
-function Subject(target, expects) {
-  this.target = target;
-  this.expects = expects;
-}
-
-Subject.prototype = {
-  /**
-   * @return {string}
-   * @override
-   */
-  toString: function () {
-    return 'Subject { target:' +
-            this.target +
-            ', expects: ' +
-            this.expects +
-            '}';
-  },
-  evaluate: function () {
-    var topic = expect(this.target),
-        keys = Object.keys(this.expects),
-        rs = {},
-        i, l, key;
-    if (typeof this.target === 'function') {
-      topic = topic.when_apply.bind(topic);
-    }
-    for (i = 0, l = keys.length; i < l; i++) {
-      key = keys[i];
-      rs[key] = this.expects[key](topic);
-    }
-    return rs;
-  }
-};
-
-function subject(target, expects) {
-  return new Subject(target, expects);
+function expect(subject, opt_args) {
+  return new Expect(subject, opt_args);
 }
 
 if (typeof exports !== 'undefined') {
+  /** @type {function(*, Array):Expect} */
   exports.expect = expect;
-  exports.Result = Result;
-  exports.result = result;
-  exports.Subject = Subject;
-  exports.subject = subject;
 }
-
 // EOF
