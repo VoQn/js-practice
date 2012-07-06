@@ -1,42 +1,49 @@
 'use strict';
 
+var T,
+    S, subject, topic,
+    Interface,
+    HogeInterface, HugaInterface,
+    hoge, piyo;
+
 if (require) {
-  var T = require('../src/tester'),
-      runTests = T.runTests,
-      testGroup = T.testGroup,
+  T = require('../src/tester');
+  S = require('../src/subject');
 
-      expect = require('../src/expect').expect,
+  subject = S.subject;
+  topic = S.topic;
 
-      Interface = require('../src/interface').Interface;
+  Interface = require('../src/interface').Interface;
 }
 
-var ensure = Interface.ensureImplements;
+HogeInterface = new Interface('HogeInterface', ['hoge']);
 
-var HogeInterface = new Interface('HogeInterface', [
-      'hoge'
-    ]);
+HugaInterface = new Interface('HugaInterface', ['huga']);
 
-var HugaInterface = new Interface('HugaInterface', [
-      'huga'
-    ]);
+hoge = {
+  hoge: function() {
+    return 'hoge';
+  }
+};
 
-runTests(testGroup({
-   'duck typing of a Interface':
-     function () {
-       var hoge = {
-         hoge: function () {
-           return 'hoge';
-         }
-       };
-       return expect(ensure).when_apply(hoge, HogeInterface).to_be(true);
-     },
-  'duck typing of two Interfaces':
-    function () {
-      var piyo = {
-        hoge: function () { return 'hoge'; },
-        huga: function () { return 'huga'; }
-      };
-      return expect(ensure).when_apply(piyo, HogeInterface, HugaInterface).to_be(true);
-    }
+piyo = {
+  hoge: function() {
+    return 'hoge';
+  },
+  huga: function() {
+    return 'huga';
+  }
+};
+
+T.runTests(T.testGroup({
+   'Interface.ensureImplements(object, [interfaces:)':
+     subject(Interface.ensureImplements, {
+       'check duck typing of a Interface':
+         topic(hoge, HogeInterface).to_be(true),
+       'check duck typing of two Interfaces':
+         topic(piyo,
+               HogeInterface,
+               HugaInterface).to_be(true)
+     })
 }));
 // EOF
