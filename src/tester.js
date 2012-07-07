@@ -99,7 +99,8 @@ var MARK_CHAR = {
   PASSED: '\u2713',
   FAILED: '\u2718',
   SUN: '\u263c',
-  CLOUD: '\u2601'
+  CLOUD: '\u2601',
+  RAIN: '\u2602'
 };
 
 function wrapColor(str, color) {
@@ -172,7 +173,7 @@ TestView.prototype = {
       r = res[key];
       if (r.success) {
         countSuccess++;
-        c = ANSI_COLOR.CYAN;
+        c = ANSI_COLOR.GREEN;
       } else {
         countFailed++;
         c = ANSI_COLOR.RED;
@@ -183,11 +184,13 @@ TestView.prototype = {
     }
     if (countFailed) {
       suite_label = wrapColor(
-          MARK_CHAR.CLOUD + ' ' + label + ': failed ' + countFailed + ' case',
+          MARK_CHAR.CLOUD + ' ' + label +
+          ': failed ' + countFailed + ' case',
           ANSI_COLOR.YELLOW);
     } else {
       suite_label = wrapColor(
-          MARK_CHAR.SUN + ' ' + label + ': passed ' + countSuccess + ' case',
+          MARK_CHAR.SUN + ' ' + label +
+          ': passed ' + countSuccess + ' case',
           ANSI_COLOR.GREEN);
     }
     this.logBuffer.splice(last_index + 1, 0, suite_label);
@@ -200,9 +203,9 @@ TestView.prototype = {
   dump: function() {
     var i, l, buffer = this.logBuffer;
     console.log(buffer.join('\n') + '\n\n' +
-        'success: ' + this.countSuccess +
-        ', failed: ' + this.countFailed +
-        ', total: ' + (this.countSuccess + this.countFailed));
+        'success | ' + this.countSuccess + '\n' +
+        'failed  | ' + this.countFailed + '\n' +
+        'total   | ' + (this.countSuccess + this.countFailed));
     return this;
   }
 };
