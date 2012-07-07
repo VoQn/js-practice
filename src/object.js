@@ -101,15 +101,25 @@ function asArray(x, opt_from, opt_to) {
     return [x];
   }
   var args = Array.prototype.slice.apply(x),
-      from = supplement(0, opt_from, function(d, v) {
+      from = supplement(0, opt_from, function fix_from(d, v) {
         return Math.min(v, args.length - 1);
       }),
-      to = supplement(args.length, opt_to, function(d, v) {
+      to = supplement(args.length, opt_to, function fix_to(d, v) {
         return Math.min(d, Math.max(0, v));
       });
   return args.slice(from, to);
 }
 
+/**
+ * @param {*} any value.
+ * @return {string} string expression.
+ */
+function show(any) {
+  if (typeof any === 'string') {
+    return '"' + any + '"';
+  }
+  return '' + any;
+}
 
 if (typeof exports !== 'undefined') {
   /** @type {function(*):boolean} */
@@ -129,5 +139,8 @@ if (typeof exports !== 'undefined') {
 
   /** @type {function(*, number=, number=):Array} */
   exports.asArray = asArray;
+
+  /** @type {function(*):string} */
+  exports.show = show;
 }
 // EOF
