@@ -3,13 +3,22 @@
 var O = require('./object'),
     supplement = O.supplement,
     show = O.show;
-
+/**
+ * @param {*} fst first value of pair.
+ * @param {*} snd second value of pair.
+ * @constructor
+ */
 function Tuple(fst, snd) {
   this.fst = supplement(null, fst);
   this.snd = supplement(null, snd);
 }
 
 Tuple.prototype = {
+  /**
+   * @this {Tuple}
+   * @return {string} expression.
+   * @override
+   */
   toString: function() {
     return '(' + show(this.fst) + ', ' + show(this.snd) + ')';
   }
