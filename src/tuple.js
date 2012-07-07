@@ -1,7 +1,8 @@
 'use strict';
 
 var O = require('./object'),
-    supplement = O.supplement;
+    supplement = O.supplement,
+    show = O.show;
 
 function Tuple(fst, snd) {
   this.fst = supplement(null, fst);
@@ -10,7 +11,7 @@ function Tuple(fst, snd) {
 
 Tuple.prototype = {
   toString: function() {
-    return '(' + this.fst + ', ' + this.snd + ')';
+    return '(' + show(this.fst) + ', ' + show(this.snd) + ')';
   }
 };
 
