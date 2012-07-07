@@ -1,46 +1,15 @@
 'use strict';
 
-var R, Result;
+var R, Result,
+    ANSI, ANSI_COLOR, MARK_CHAR, wrapColor;
 
 if (require) {
-  R = require('./result');
+  R = require('./result'),
+  ANSI = require('./ansi');
   Result = R.Result;
-}
-
-/** @const {string} */
-var ANSI_PREFIX = '\u001b';
-
-/** @enum {number} */
-var ANSI_COLOR = {
-  BLACK: 30,
-  RED: 31,
-  GREEN: 32,
-  YELLOW: 33,
-  BLUE: 34,
-  PURPLE: 35,
-  CYAN: 36,
-  GRAY: 37
-};
-
-/** @enum {string} */
-var MARK_CHAR = {
-  PASSED: '\u2713',
-  FAILED: '\u2718',
-  SUN: '\u263c',
-  CLOUD: '\u2601',
-  RAIN: '\u2602'
-};
-
-
-/**
- * @param {string} str expression.
- * @param {string} color ANSI color code.
- * @return {string} ANSI colored text.
- */
-function wrapColor(str, color) {
-  var ansi_prefix = '\u001b',
-      suffix = ansi_prefix + '[0m';
-  return ansi_prefix + '[' + color + 'm' + str + suffix;
+  ANSI_COLOR = ANSI.ANSI_COLOR;
+  MARK_CHAR = ANSI.MARK_CHAR;
+  wrapColor = ANSI.wrapColor;
 }
 
 /**
