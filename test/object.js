@@ -41,6 +41,7 @@ T.runTests(T.testGroup({
     }),
   'function asArray(any)':
     subject(O.asArray, {
+      '() => []': topic().to_be([]),
       '(undefined) => []': topic(undefined).to_be([]),
       '(null) => []': topic(null).to_be([]),
       '(false) => [false]': topic(false).to_be([false]),
@@ -52,6 +53,8 @@ T.runTests(T.testGroup({
         }).to_be([]),
       '(arguments) => [arg1, arg2, arg3, ... ]': (function() {
           return topic(arguments).to_be([1, 2, 3]);
-        })(1, 2, 3)
+        })(1, 2, 3),
+      '([]) => []': topic([]).to_be([]),
+      '([1,2,3]) => [1,2,3]': topic([1, 2, 3]).to_be([1, 2, 3])
     })
 }));

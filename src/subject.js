@@ -109,7 +109,8 @@ Topic.prototype = {
 };
 
 function topic(var_args) {
-  return new Topic(asArray(arguments));
+  var args = arguments.length ? asArray(arguments) : [undefined];
+  return new Topic(args);
 }
 
 if (typeof exports !== 'undefined') {
