@@ -1,15 +1,13 @@
 'use strict';
 
 var R, Result,
-    ANSI, ANSI_COLOR, MARK_CHAR, wrapColor;
+    ANSI, MARK_CHAR;
 
 if (require) {
   R = require('./result'),
   ANSI = require('./ansi');
   Result = R.Result;
-  ANSI_COLOR = ANSI.ANSI_COLOR;
   MARK_CHAR = ANSI.MARK_CHAR;
-  wrapColor = ANSI.wrapColor;
 }
 
 /**
@@ -52,12 +50,12 @@ TestView.prototype = {
               r.toString().replace(/(\{|,|\})/g, '\n').replace(/:/g, '\t| ');
     if (success) {
       this.countSuccess++;
-      color = ANSI_COLOR.GREEN;
+      color = ANSI.COLOR.GREEN;
     } else {
       this.countFailed++;
-      color = ANSI_COLOR.RED;
+      color = ANSI.COLOR.RED;
     }
-    this.logBuffer.push(prefix + ' ' + wrapColor(log, color));
+    this.logBuffer.push(prefix + ' ' + ANSI.wrap(log, color));
     return {
       mark: prefix,
       log: log
@@ -84,20 +82,20 @@ TestView.prototype = {
       r = res[key];
       if (r.success) {
         countSuccess++;
-        c = ANSI_COLOR.GREEN;
+        c = ANSI.COLOR.GREEN;
       } else {
         countFailed++;
-        c = ANSI_COLOR.RED;
+        c = ANSI.COLOR.RED;
       }
       o = this._simple_logging(key, r);
       this.logBuffer[last_index + i + 1] = '  ' + o.mark + ' ' +
-        wrapColor(o.log.replace(/\n/g, '\n    '), c);
+        ANSI.wrap(o.log.replace(/\n/g, '\n    '), c);
     }
     if (countFailed) {
-      suite_label = wrapColor(MARK_CHAR.CLOUD, ANSI_COLOR.CYAN) +
+      suite_label = ANSI.wrap(MARK_CHAR.CLOUD, ANSI.COLOR.CYAN) +
         ' ' + label + ': failed ' + countFailed + ' case';
     } else {
-      suite_label = wrapColor(MARK_CHAR.SUN, ANSI_COLOR.YELLOW) +
+      suite_label = ANSI.wrap(MARK_CHAR.SUN, ANSI.COLOR.YELLOW) +
         ' ' + label + ': passed ' + countSuccess + ' case';
     }
     this.logBuffer.splice(last_index + 1, 0, suite_label);
