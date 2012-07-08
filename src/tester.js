@@ -93,7 +93,9 @@ function testGroup(test_cases) {
  * @return {Array.<Result>} for each evaluated value from test_suites.
  */
 function runTests(test_suite) {
-  var i, l, rs = [], view = new TestView();
+  var i, l,
+      rs = [],
+      view = new TestView();
   for (i = 0, l = test_suite.length; i < l; i++) {
     rs[i] = test_suite[i].evaluate();
     view.logging(test_suite[i].label, rs[i]);

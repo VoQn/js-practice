@@ -20,8 +20,30 @@ function TestView() {
   /** @type {number} */
   this.countFailed = 0;
 
+  /** @type {number} */
+  this.countError = 0;
+
   /** @type {Array.<string> */
   this.logBuffer = [];
+}
+
+function highlightResult(r) {
+  if (!r.success) {
+    if (r.exception) {
+      return '>> ' +
+           ANSI.wrap('error | ', ANSI.COLOR.RED) +
+           ANSI.wrap(r.exception.stack, ANSI.COLOR.RED);
+    }
+    return '>> ' +
+           ANSI.wrap('expected | ', ANSI.COLOR.YELLOW) +
+           ANSI.wrap(r.expected,
+                     ANSI.COLOR.YELLOW,
+                     ANSI.OPTION.BRIGHT) + '\n   ' +
+           ANSI.wrap('but got  | ', ANSI.COLOR.YELLOW) +
+           ANSI.wrap(r.actual,
+                     ANSI.COLOR.YELLOW,
+                     ANSI.OPTION.BRIGHT);
+  }
 }
 
 TestView.prototype = {
@@ -32,6 +54,7 @@ TestView.prototype = {
   clear: function() {
     this.countSuccess = 0;
     this.countFailed = 0;
+    this.countError = 0;
     this.logBuffer = [];
     return this;
   },
@@ -42,22 +65,25 @@ TestView.prototype = {
    * @return {string} test log.
    */
   _simple_logging: function(l, r) {
-    var color,
-        success = r.success,
-        prefix = success ? MARK_CHAR.PASSED : MARK_CHAR.FAILED,
-        log = success ? l :
-              l + '\n' +
-              r.toString().replace(/(\{|,|\})/g, '\n').replace(/:/g, '\t| ');
-    if (success) {
+    var mark, log;
+    if (r.success) {
       this.countSuccess++;
-      color = ANSI.COLOR.GREEN;
+      mark = MARK_CHAR.PASSED;
+      log = ANSI.wrap(l, ANSI.COLOR.GREEN);
+    } else if (r.exception) {
+      this.countError++;
+      mark = MARK_CHAR.FAILED;
+      log = ANSI.wrap(l, ANSI.COLOR.RED) + '\n' +
+            highlightResult(r);
     } else {
       this.countFailed++;
-      color = ANSI.COLOR.RED;
+      mark = MARK_CHAR.FAILED;
+      log = ANSI.wrap(l, ANSI.COLOR.YELLOW) + '\n' +
+            highlightResult(r);
     }
-    this.logBuffer.push(prefix + ' ' + ANSI.wrap(log, color));
+    this.logBuffer.push(mark + ' ' + log);
     return {
-      mark: prefix,
+      mark: mark,
       log: log
     };
   },
@@ -74,6 +100,7 @@ TestView.prototype = {
     }
     var countSuccess = 0,
         countFailed = 0,
+        countError = 0,
         keys = Object.keys(res),
         last_index = this.logBuffer.length - 1,
         i, l, key, r, log, suite_label, c, o, prefix;
@@ -83,6 +110,9 @@ TestView.prototype = {
       if (r.success) {
         countSuccess++;
         c = ANSI.COLOR.GREEN;
+      } else if (r.exception) {
+        countError++;
+        c = ANSI.COLOR.RED;
       } else {
         countFailed++;
         c = ANSI.COLOR.RED;
@@ -91,7 +121,13 @@ TestView.prototype = {
       this.logBuffer[last_index + i + 1] = '  ' + o.mark + ' ' +
         ANSI.wrap(o.log.replace(/\n/g, '\n    '), c);
     }
-    if (countFailed) {
+    if (countError) {
+      suite_label = ANSI.wrap(MARK_CHAR.RAIN, ANSI.COLOR.CYAN) +
+        ' ' + label + ': ' +
+        (countSuccess ? 'passed ' + countSuccess + ', ' : '') +
+        (countFailed ? 'failed ' + countFailed + ', ' : '') +
+        'error ' + countError + ' case';
+    } else if (countFailed) {
       suite_label = ANSI.wrap(MARK_CHAR.CLOUD, ANSI.COLOR.CYAN) +
         ' ' + label + ': failed ' + countFailed + ' case';
     } else {
@@ -106,11 +142,39 @@ TestView.prototype = {
    * @return {TextView} itself.
    */
   dump: function() {
-    var i, l, buffer = this.logBuffer;
-    console.log(buffer.join('\n') + '\n\n' +
-        'success | ' + this.countSuccess + '\n' +
-        'failed  | ' + this.countFailed + '\n' +
-        'total   | ' + (this.countSuccess + this.countFailed));
+    var header, status;
+    if (this.countError) {
+      header = MARK_CHAR.FAILED + ' ' +
+        ANSI.wrap('Error',
+                   ANSI.COLOR.RED,
+                   ANSI.OPTION.BRIGHT);
+      status = (this.countSuccess ?
+                  this.countSuccess + ' passed, ' :
+                  '') +
+               this.countFailed + ' failed, ' +
+               this.countError + ' error';
+
+    } else if (this.countFailed) {
+      header = MARK_CHAR.FAILED + ' ' +
+        ANSI.wrap('Failed',
+                   ANSI.COLOR.YELLOW,
+                   ANSI.OPTION.BRIGHT);
+      status = (this.countSuccess ?
+                  this.countSuccess + ' passed, ' :
+                  '') +
+               this.countFailed + ' failed';
+    } else {
+      header = MARK_CHAR.PASSED + ' ' +
+        ANSI.wrap('OK',
+                   ANSI.COLOR.GREEN,
+                   ANSI.OPTION.BRIGHT);
+      status = ANSI.wrap(this.countSuccess,
+                         ANSI.COLOR.WHITE,
+                         ANSI.OPTION.BRIGHT) +
+               ' passed';
+    }
+    console.log(this.logBuffer.join('\n') + '\n\n' +
+        header + ' >> ' + status);
     return this;
   }
 };

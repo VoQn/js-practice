@@ -1,13 +1,17 @@
 'use strict';
 
 var O, asArray,
+    R, result,
     E, expect;
 
 if (require) {
   O = require('./object');
+  R = require('./result');
   E = require('./expect');
+
   asArray = O.asArray;
   expect = E.expect;
+  result = R.result;
 }
 
 /**
@@ -48,7 +52,15 @@ Subject.prototype = {
       if (exp instanceof Topic) {
         rs[key] = exp.apply(topic);
       } else if (typeof exp === 'function') {
-        rs[key] = exp(this.target);
+        try {
+          rs[key] = exp(this.target);
+        } catch (e) {
+          rs[key] = result({
+            success: false,
+            reason: 'unexpected exception',
+            exception: e
+          });
+        }
       } else {
         rs[key] = exp;
       }

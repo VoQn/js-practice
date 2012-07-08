@@ -12,7 +12,13 @@ var COLOR = {
   BLUE: 34,
   PURPLE: 35,
   CYAN: 36,
-  GRAY: 37
+  GRAY: 37,
+  WHITE: 38
+};
+
+var OPTION = {
+  BRIGHT: 1,
+  REVERSE: 7
 };
 
 /** @enum {string} */
@@ -26,13 +32,17 @@ var MARK_CHAR = {
 
 /**
  * @param {string} str expression.
- * @param {string} color ANSI color code.
+ * @param {number} color ANSI color code.
+ * @param {number=} option ANSI decoration code.
  * @return {string} ANSI colored text.
  */
-function wrap(str, color) {
-  return PREFIX + '[' + color + 'm' +
+function wrap(str, color, option) {
+  function codeMake(c) {
+    return PREFIX + '[' + c + 'm';
+  }
+  return codeMake(color) + (option ? codeMake(option) : '') +
          str +
-         PREFIX + '[0m';
+         codeMake(0);
 }
 
 if (typeof exports !== 'undefined') {
@@ -41,6 +51,9 @@ if (typeof exports !== 'undefined') {
 
   /** @type {Object.<string, number>} */
   exports.COLOR = COLOR;
+
+  /** @type {Object.<string, number}>} */
+  exports.OPTION = OPTION;
 
   /** @type {Object.<string, string>} */
   exports.MARK_CHAR = MARK_CHAR;
