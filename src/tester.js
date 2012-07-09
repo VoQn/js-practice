@@ -1,11 +1,15 @@
 'use strict';
 
-var E, S, Subject, expect, R, Result, result;
+var E, expect,
+    S, Subject,
+    R, Result, result,
+    TestView;
 
 if (require) {
-  E = require('../src/expect');
-  S = require('../src/subject');
-  R = require('../src/result');
+  E = require('./expect');
+  S = require('./subject');
+  R = require('./result');
+  TestView = require('./testView').TestView;
   Subject = S.Subject;
   expect = E.expect;
   Result = R.Result;
@@ -84,138 +88,14 @@ function testGroup(test_cases) {
   return suite;
 }
 
-var ANSI_COLOR = {
-  BLACK: 30,
-  RED: 31,
-  GREEN: 32,
-  YELLOW: 33,
-  BLUE: 34,
-  PURPLE: 35,
-  CYAN: 36,
-  GRAY: 37
-};
-
-var MARK_CHAR = {
-  PASSED: '\u2713',
-  FAILED: '\u2718',
-  SUN: '\u263c',
-  CLOUD: '\u2601',
-  RAIN: '\u2602'
-};
-
-function wrapColor(str, color) {
-  var ansi_prefix = '\u001b',
-      suffix = ansi_prefix + '[0m';
-  return ansi_prefix + '[' + color + 'm' + str + suffix;
-}
-
-/**
- * @constructor
- */
-function TestView() {
-  return this.clear();
-}
-
-TestView.prototype = {
-  /**
-   * @this {TestView}
-   * @return {TestView} formated test view.
-   */
-  clear: function() {
-    this.countSuccess = 0;
-    this.countFailed = 0;
-    this.logBuffer = [];
-    return this;
-  },
-  /**
-   * @this {TestView}
-   * @param {string} l label of test case.
-   * @param {Result} r result of test case.
-   * @return {string} test log.
-   */
-  _simple_logging: function(l, r) {
-    var color,
-        success = r.success,
-        prefix = success ? MARK_CHAR.PASSED : MARK_CHAR.FAILED,
-        log = prefix + ' ' +
-            (success ? l :
-              l + '\n' +
-              r.toString().replace(/(\{|,|\})/g, '\n').replace(/:/g, '\t| ')
-            );
-    if (success) {
-      this.countSuccess++;
-      color = ANSI_COLOR.GREEN;
-    } else {
-      this.countFailed++;
-      color = ANSI_COLOR.RED;
-    }
-    this.logBuffer.push(wrapColor(log, color));
-    return log;
-  },
-  /**
-   * @this {TestView}
-   * @param {string} l label of test case.
-   * @param {Result|Object.<string, Result>} r result of test case,
-   * or results of test suites.
-   */
-  logging: function(label, res) {
-    if (res instanceof Result) {
-      this._simple_logging(label, res);
-      return;
-    }
-    var countSuccess = 0,
-        countFailed = 0,
-        keys = Object.keys(res),
-        last_index = this.logBuffer.length - 1,
-        i, l, key, r, log, suite_label, c, prefix;
-    for (i = 0, l = keys.length; i < l; i++) {
-      key = keys[i];
-      r = res[key];
-      if (r.success) {
-        countSuccess++;
-        c = ANSI_COLOR.GREEN;
-      } else {
-        countFailed++;
-        c = ANSI_COLOR.RED;
-      }
-      log = this._simple_logging(key, r);
-      this.logBuffer[last_index + i + 1] = '  ' +
-        wrapColor(log.replace(/\n/g, '\n    '), c);
-    }
-    if (countFailed) {
-      suite_label = wrapColor(
-          MARK_CHAR.CLOUD + ' ' + label +
-          ': failed ' + countFailed + ' case',
-          ANSI_COLOR.YELLOW);
-    } else {
-      suite_label = wrapColor(
-          MARK_CHAR.SUN + ' ' + label +
-          ': passed ' + countSuccess + ' case',
-          ANSI_COLOR.GREEN);
-    }
-    this.logBuffer.splice(last_index + 1, 0, suite_label);
-  },
-  /**
-   * output to console
-   * @this {TestView}
-   * @return {TextView} itself.
-   */
-  dump: function() {
-    var i, l, buffer = this.logBuffer;
-    console.log(buffer.join('\n') + '\n\n' +
-        'success | ' + this.countSuccess + '\n' +
-        'failed  | ' + this.countFailed + '\n' +
-        'total   | ' + (this.countSuccess + this.countFailed));
-    return this;
-  }
-};
-
 /**
  * @param {Array.<TestCase>} test_suite hash object.
  * @return {Array.<Result>} for each evaluated value from test_suites.
  */
 function runTests(test_suite) {
-  var i, l, rs = [], view = new TestView();
+  var i, l,
+      rs = [],
+      view = new TestView();
   for (i = 0, l = test_suite.length; i < l; i++) {
     rs[i] = test_suite[i].evaluate();
     view.logging(test_suite[i].label, rs[i]);
