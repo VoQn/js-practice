@@ -52,7 +52,15 @@ T.runTests(T.testGroup({
         expect(curry(add2Number, 3)(7)).to_be(10),
       '(((x, y) -> x + y), 3, 7) => 10':
         expect(curry(add2Number, 3, 7)).to_be(10)
+    })/**,
+  'わざとテストコケさした場合(x) -> x': subject(F.id,
+    {
+      'アサーションでコケてる(1) => 0': topic(1).to_be(0),
+      '実行時でエラー': function(f) {
+        return expect(f(undefined_identifier)).to_be(true);
+      }
     })
+  */
 }));
 
 // EOF
