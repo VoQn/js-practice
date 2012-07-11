@@ -25,7 +25,7 @@ var OPTION = {
 var MARK_CHAR = {
   PASSED: '\u2713',
   FAILED: '\u2718',
-  SUN: '\u263c',
+  SUN: '\u2600',
   CLOUD: '\u2601',
   RAIN: '\u2602'
 };
