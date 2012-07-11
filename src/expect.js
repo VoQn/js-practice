@@ -128,6 +128,15 @@ Expect.prototype = {
       r.success = !r.success;
     }
     return r;
+  },
+  async_to_be: function(expected) {
+    var args = this.args,
+        r = undefined;
+    args.push(function(err, actual) {
+      r = expect(actual).to_be(expected);
+    });
+    this.subject.apply(null, args);
+    return r;
   }
 };
 

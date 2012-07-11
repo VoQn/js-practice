@@ -17,77 +17,57 @@ if (require) {
 
 T.runTests(T.testGroup({
   'Async map(array, iterator, callback)': subject(async.map, {
-    '([1, 2, 3], (x) -> x ^ 4) => [1, 16, 81]': function(topic) {
-      var r;
-      topic([1, 2, 3],
+    '([1, 2, 3], (x) -> x ^ 4) => [1, 16, 81]':
+    function(topic) {
+      return expect(topic).when_apply(
+        [1, 2, 3],
         function(x, next) {
           next(null, Math.pow(x, 4));
-        },
-        function(err, actual) {
-          r = expect(actual).to_be([1, 16, 81]);
-        });
-      return r;
+        }).async_to_be([1, 16, 81]);
     },
-    '([1, 2, 3], (x) -> 2 * x) => [2, 4, 6]': function(topic) {
-      var r;
-      topic([1, 2, 3],
+    '([1, 2, 3], (x) -> 2 * x) => [2, 4, 6]':
+    function(topic) {
+      return expect(topic).when_apply(
+        [1, 2, 3],
         function(x, next) {
           next(null, 2 * x);
-        },
-        function(err, actual) {
-          r = expect(actual).to_be([2, 4, 6]);
-        });
-      return r;
+        }).async_to_be([2, 4, 6]);
     },
-    '([1, 2, 3], (x) -> x ^ 2) => [1, 4, 9]': function(topic) {
-      var r;
-      topic([1, 2, 3],
+    '([1, 2, 3], (x) -> x ^ 2) => [1, 4, 9]':
+    function(topic) {
+      return expect(topic).when_apply(
+        [1, 2, 3],
         function(x, next) {
-          next(null, x * x);
-        },
-        function(err, actual) {
-          r = expect(actual).to_be([1, 4, 9]);
-        });
-      return r;
+            next(null, x * x);
+        }).async_to_be([1, 4, 9]);
     }
   }),
   'Async filter(array, iterator, callback)': subject(async.filter, {
-    '([1, 2, 3, 4, 5], (x) -> x % 2) => [1, 3, 5]': function(topic) {
-      var r;
-      topic([1, 2, 3, 4, 5],
+    '([1, 2, 3, 4, 5], (x) -> x % 2) => [1, 3, 5]':
+    function(topic) {
+      return expect(topic).when_apply(
+        [1, 2, 3, 4, 5],
         function(x, next) {
           next(null, x % 2);
-        },
-        function(err, actual) {
-          r = expect(actual).to_be([1, 3, 5]);
-        });
-      return r;
+        }).async_to_be([1, 3, 5]);
     },
-    '(["foo", "bar", "baz", "zoo"], (x) -> x.match /^.oo$/) => ["foo", "zoo"]':
+    '(["foo", "bar", "zoo", "bee"], (x) -> x.match /^.oo$/) => ["foo", "zoo"]':
       function(topic) {
-        var r;
-        topic(['foo', 'bar', 'baz', 'zoo'],
+        return expect(topic).when_apply(
+          ['foo', 'bar', 'zoo', 'bee'],
           function(x, next) {
             next(null, x.match(/^.oo$/));
-          },
-          function(err, actual) {
-            r = expect(actual).to_be(['foo', 'zoo']);
-          });
-        return r;
+          }).async_to_be(['foo', 'zoo']);
       }
   }),
   'Async detect(array, iterator, callback)': subject(async.detect, {
     '(["hoge", "huga", "foo"], (x) -> "huga" === x, (x) -> x) => "huga"':
     function(topic) {
-      var r;
-      topic(['hoge', 'huga', 'foo'],
+      return expect(topic).when_apply(
+        ['hoge', 'huga', 'foo'],
         function(x, next) {
           next(null, x === 'huga');
-        },
-        function(err, actual) {
-          r = expect(actual).to_be('huga');
-        });
-      return r;
+        }).async_to_be('huga');
     },
     '([1, 2, 3, 4], (x) -> x > 5, (x) -> x) => undefined':
     function(topic) {
