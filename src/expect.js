@@ -80,8 +80,8 @@ Expect.prototype = {
         success: is_eq,
         expected: error,
         actual: e,
-        reason: is_eq ? 'expected error catch' : 'unexpected error',
-        exception: e
+        reason: is_eq ? 'expected error catch' : 'unexpected error\n' + e.stack,
+        exception: is_eq ? null : e
       });
     }
   },
@@ -102,7 +102,7 @@ Expect.prototype = {
         reason = success ? 'same' : 'different';
       } catch (e) {
         exception = e;
-        reason = 'unexpected exception: (' + e + ')';
+        reason = e.stack;
       }
     } else {
       actual = this.subject;

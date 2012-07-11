@@ -133,6 +133,9 @@ if (typeof exports !== 'undefined') {
   exports.subject = subject;
 
   /** @type {function(*):Topic} */
+  exports.Topic = Topic;
+
+  /** @type {function(*):Topic} */
   exports.topic = topic;
 }
 // EOF

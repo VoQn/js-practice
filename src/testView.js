@@ -31,7 +31,6 @@ function highlightResult(r) {
   if (!r.success) {
     if (r.exception) {
       return '>> ' +
-           ANSI.wrap('error | ', ANSI.COLOR.RED) +
            ANSI.wrap(r.exception.stack, ANSI.COLOR.RED);
     }
     return '>> ' +
