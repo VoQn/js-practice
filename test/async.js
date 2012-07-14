@@ -38,8 +38,26 @@ T.runTests(T.testGroup({
       return expect(topic).when_apply(
         [1, 2, 3],
         function(x, next) {
-            next(null, x * x);
+          next(null, x * x);
         }).async_to_be([1, 4, 9]);
+    }
+  }),
+  'Async reduce(array, init, iterator, callback)': subject(async.reduce, {
+    '([1, 2, 3, 4, 5], 0, (r, x) -> r + x) => 15':
+    function(topic) {
+      return expect(topic).when_apply(
+        [1, 2, 3, 4, 5], 0,
+        function(a, x, next) {
+          next(null, a + x);
+        }).async_to_be(15);
+    },
+    '([1, 2, 3, 4, 5], 1, (r, x) -> r * x) => 120':
+    function(topic) {
+      return expect(topic).when_apply(
+        [1, 2, 3, 4, 5], 1,
+        function(a, x, next) {
+          next(null, a * x);
+        }).async_to_be(120);
     }
   }),
   'Async filter(array, iterator, callback)': subject(async.filter, {
@@ -82,4 +100,57 @@ T.runTests(T.testGroup({
       return r;
     }
   })
+  /**,
+  'Async auto(tasks, callback)': subject(async.auto, {
+    'async task flow':
+    function(topic) {
+      var order = [],
+          done = false,
+          r = undefined;
+
+      topic({
+        task1: ['task2', function(callback) {
+          console.log('( hey! )> task1');
+          setTimeout(function() {
+            order.push('task1');
+            callback();
+          }, 25);
+        }],
+        task2: function(callback) {
+          console.log('( you! )> task2');
+          setTimeout(function() {
+            order.push('task2');
+            callback();
+          }, 50);
+        },
+        task5: ['task2', function(callback) {
+          console.log('( come on! )> task5');
+          order.push('task5');
+          callback();
+        }]
+      },
+      function(err) {
+        r = expect(order).to_be(['task2', 'task5']);
+        done = true;
+      });
+
+      setTimeout(function() {
+        console.log('failed');
+        r = R.result({
+          success: false,
+          expected: ['task2', 'task5'],
+          actual: null,
+          reason: 'loop has not finish'
+        });
+        done = true;
+      }, 1);
+
+      while (true) {
+        if (done) {
+          return r;
+        }
+      }
+    }
+  })
+  **/
 }));

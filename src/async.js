@@ -51,7 +51,7 @@
   var _reduce;
   if (Array.prototype.reduce) {
     _reduce = function(arr, iterator, memo) {
-      return arr.reduce(iterator);
+      return arr.reduce(iterator, memo);
     };
   } else {
     _reduce = function(arr, iterator, memo) {
@@ -210,13 +210,14 @@
   async.mapSeries = doSeries(_asyncMap);
 
   async.reduce = function(arr, memo, iterator, callback) {
-    async.eachSeries(arr, function(x, callback) {
+    async.eachSeries(arr, function(x, next) {
       iterator(memo, x, function(err, v) {
         memo = v;
-        callback(err);
-      }, function(err) {
-        callback(err, memo);
+        next(err);
       });
+    },
+    function(err) {
+      callback(err, memo);
     });
   };
 
@@ -369,7 +370,7 @@
           listeners.unshift(fn);
         },
         removeListener = function(fn) {
-          for (var i = 0, l = listeners.length; i < l; i++) {
+          for (var i = 0; i < listeners.length; i++) {
             if (listeners[i] === fn) {
               listeners.splice(i, 1);
               return;
@@ -405,20 +406,22 @@
           },
           requires = task.slice(0, Math.abs(task.length - 1)) || [],
           ready = function() {
-            return _reduce(requires, function(a, x) {
+            var results_has_key = results.hasOwnProperty(k);
+            var requires_on_ready = _reduce(requires, function(a, x) {
               return (a && results.hasOwnProperty(x));
-            }, true) && !results.hasOwnProperty(k);
+            }, true);
+            return requires_on_ready && !results_has_key;
           };
       if (ready()) {
         task[task.length - 1](taskCallback, results);
       } else {
-        var listener = function() {
+        addListener(function listener() {
+          console.log('call listener');
           if (ready()) {
             removeListener(listener);
             task[task.length - 1](taskCallback, results);
           }
-        };
-        addListener(listener);
+        });
       }
     });
   };
