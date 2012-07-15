@@ -8,8 +8,9 @@
     cps = root.cps;
   }
 
-  var _limit = 1e+6,
-      _quoter = _limit / 4,
+  var _limit = process.argv.length > 2 ? process.argv[2] : 1e+3;
+
+  var _quoter = _limit / 4,
       _date = new Date(),
       _start_t = _date.valueOf(),
       _interval_t = _start_t,
@@ -32,48 +33,49 @@
         }
         return t + 'ms';
       },
-      print_cloud = function(label, i, d) {
+      print_cloud = function(label, time, i, d) {
         console.log(
             '\u001b[1m\u2601\u001b[0m' +
             '  <- \u001b[34m' + label +
             ' [' + i + ']\u001b[0m' +
             (d ? (' \u2708  ' + _timeExpr(d) + ' ') : ' '));
       },
-      print_rain = function(label, i, d) {
+      print_rain = function(label, time, i, d) {
         console.log('\u001b[36m\u001b[1m\u2602\u001b[0m' +
             '  -> \u001b[36m' + label +
             ' [' + i + ']\u001b[0m' +
             (d ? (' \u2708  ' + _timeExpr(d) + ' ') : ' '));
       },
-      print_sun = function(label, data) {
+      print_sun = function(label, time, data) {
         var expr = isArray(data) && data.length > 9 ?
           data.length + ' length array [ ' +
           data.slice(0, 5) + ', ... ]' :
           data;
         console.log('\u001b[33m\u001b[1m\u2600\u001b[0m  -> ' +
               '\u001b[33m' + label + ' done\u001b[0m' +
-              ' time: ' + _timeExpr(_now() - _start_t) +
+              ' time: ' + _timeExpr(time - _start_t) +
               (data ?
                '\n\u001b[33mresult: \u001b[1m' + expr + '\u001b[0m' :
                ' '));
-        _interval_t = _now();
+        _interval_t = time;
       },
-      prints = function(printer, label, index, delay) {
-        var time = _now();
+      prints = function(printer, label, time, index, delay) {
         if (time - _time_stamp > 100) {
-          printer(label, index, delay);
+          printer(label, time, index, delay);
           _time_stamp = time;
         }
       },
       printItr = function(label, value, i, next) {
-        //var d = 0; // _random(1, 20) * 50;
-        //prints(print_cloud, label, i, d);
+        //var d = _random(16, 33);
+        if (i > 0 && i % _quoter === 0) {
+          print_cloud(label, _now(), i);
+        }
         //setTimeout(function() {
-          if (i === 1 || i > 0 && i % _quoter === 0) {
-            print_rain(label, i);
-          }
-          // prints(print_rain, label, i);
-          next(null, value);
+        //  if (i === 1 || i > 0 && i % _quoter === 0) {
+        //    print_rain(label, i);
+        //  }
+        //  prints(print_rain, label, i);
+        return next(null, value);
         //}, d);
       },
       sampleItr = function(label, f) {
@@ -86,7 +88,7 @@
       },
       sampleAft = function(label) {
         return function(err, results) {
-          print_sun(label, results);
+          print_sun(label, _now(), results);
         };
       },
       _even = function(x) {
@@ -97,26 +99,28 @@
       };
 
   var parallel_label = function(label) {
-    cps.next(console.log, '\u001b[32m\u001b[1m\u2708\u001b[0m' +
+    console.log('\u001b[32m\u001b[1m\u2708\u001b[0m' +
         '  -> \u001b[32m\u001b[1m' +
-        label + '\u001b[0m');
+        label + ' flight\u001b[0m time: ' + _timeExpr(_now() - _start_t));
   };
 
-  console.log('ready ... (' + _timeExpr(_now() - _start_t) + ')');
+  console.log('test ' + _limit + ' length array loop, ready ...');
+
+  parallel_label('fromTo');
 
   cps.fromTo([1, _limit],
-    sampleItr('fromTo ', _id),
+    sampleItr('fromTo', _id),
     function(err, arr) {
 
-      print_sun('fromTo', arr);
+      print_sun('fromTo', _now(), arr);
 
-      parallel_label('each');
+      parallel_label('each  ');
 
       cps.each(arr,
           sampleItr('each  ', _id),
           sampleAft('each  '));
 
-      parallel_label('map');
+      parallel_label('map   ');
 
       cps.map(arr,
         sampleItr('map   ', _id),

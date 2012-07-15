@@ -46,7 +46,8 @@
   cps.TIME_SLICE = 16;
 
   var _trampoline = function(context) {
-    var remain = context !== undefined && context.func,
+    var remain = context !== undefined &&
+                 typeof context.func === 'function',
         time_stamp = _now(),
         limit = time_stamp + cps.TIME_SLICE;
     while (remain && time_stamp < limit) {
@@ -54,7 +55,8 @@
         context.func.apply(null, context.args) :
         context.func();
       time_stamp = _now();
-      remain = context !== undefined && context.func;
+      remain = context !== undefined &&
+               typeof context.func === 'function';
     }
     if (remain) {
       cps.next(_trampoline, context);
@@ -71,18 +73,22 @@
   var _each_context = function(arr, acc, callback) {
     var i = 0, c = 0, l = arr.length, err = undefined,
         iter = function() {
-          acc(arr[i], i, function(error) {
+          var context = acc(arr[i], i, function(error) {
             if (error) {
               err = error;
             }
             c++;
+            return loop_;
           });
           i++;
+          if (context) {
+            return context;
+          }
           return loop_;
         },
         loop = function() {
           if (err || c >= l) {
-            return {func: callback, args: [err]};
+            return callback(err);
           }
           if (i < l) {
             return iter_;
@@ -100,24 +106,25 @@
     var i = 0, c = 0, l = arr.length,
         err = undefined, rs = [],
         iter = function() {
-          var j = i;
-          acc(arr[i], i, function(error, result) {
+          var j = i,
+          context = acc(arr[i], i, function(error, result) {
             if (error) {
               err = error;
             } else {
               rs[j] = result;
             }
             c++;
+            return loop_;
           });
           i++;
+          if (context) {
+            return context;
+          }
           return loop_;
         },
         loop = function() {
-          if (err) {
-            return {func: callback, args: [err]};
-          }
-          if (c >= l) {
-            return {func: callback, args: [err, rs]};
+          if (err || c >= l) {
+            return callback(err, rs);
           }
           if (i < l) {
             return iter_;
@@ -145,6 +152,7 @@
                 j++;
               }
               c++;
+              return loop_;
             });
             i++;
             return loop_;
@@ -153,7 +161,7 @@
             return a.index - b.index;
           },
           passValue = function(x, k, next) {
-            next(null, x.value);
+            return next(null, x.value);
           },
           sort = function() {
             return _map_context(
@@ -163,7 +171,7 @@
           },
           loop = function() {
             if (err) {
-              return {func: callback, args: [err]};
+              return callback(err);
             }
             if (c >= l) {
               return sort_;
@@ -190,8 +198,8 @@
     var i = 0, c = 0, finished = false, l = arr.length,
         err = undefined, r = undefined,
         iter = function() {
-          var x = arr[i];
-          acc(x, i, function(error, result) {
+          var x = arr[i],
+          context = acc(x, i, function(error, result) {
             if (error) {
               err = error;
             } else if (result) {
@@ -199,13 +207,17 @@
               finished = true;
             }
             c++;
+            return loop_;
           });
           i++;
+          if (context) {
+            return context;
+          }
           return loop_;
         },
         loop = function() {
           if (err || finished || c >= l) {
-            return {func: callback, args: [err, r]};
+            return callback(err, r);
           }
           if (i < l) {
             return iter_;
@@ -230,22 +242,26 @@
         err = undefined, rs = [],
         x = ini,
         iter = function() {
-          var j = i;
-          acc(x, i, function(error, result) {
+          var j = i,
+          context = acc(x, i, function(error, result) {
             if (error) {
               err = error;
             } else {
               rs[j] = result;
             }
             c++;
+            return loop_;
           });
           i++;
           x = next(x);
+          if (context) {
+            return context;
+          }
           return loop_;
         },
         loop = function() {
           if (err || c >= l) {
-            return {func: callback, args: [err, rs]};
+            return callback(err, rs);
           }
           if (i < l) {
             return iter_;
@@ -263,20 +279,24 @@
     var i = 0, c = 0, l = arr.length,
         err = undefined, r = undefined,
         iter = function() {
-          acc(r, arr[i], i, function(error, result) {
+          var context = acc(r, arr[i], i, function(error, result) {
             if (error) {
               err = error;
             } else {
               r = result;
             }
             c++;
+            return loop_;
           });
           i++;
+          if (context) {
+            return context;
+          }
           return loop_;
         },
         loop = function() {
           if (err || c >= l) {
-            return {func: callback, args: [err, r]};
+            return callback(err, r);
           }
           if (i < l) {
             return iter_;
