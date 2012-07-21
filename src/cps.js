@@ -52,7 +52,7 @@
         finished = false,
         i = 0;
 
-    for (; i < LIMIT; i++) {
+    for (; !finished && i < LIMIT; i++) {
       iterate(array[i], i, array, function(error) {
         receive_count++;
         if (finished) {
@@ -66,7 +66,6 @@
           callback();
         }
       });
-      if (finished) return;
     }
   };
 
@@ -106,13 +105,13 @@
       }, function(error) {
         if (error) {
           callback(error);
-        } else {
-          cps.map(sort.nquick(hash_stack, function(a, b) {
-            return a.index - b.index;
-          }), function(entry, index, iterable, next) {
-            next(undefined, entry.value);
-          }, callback);
+          return;
         }
+        cps.map(sort.nquick(hash_stack, function(a, b) {
+            return a.index - b.index;
+        }), function(entry, index, iterable, next) {
+            next(undefined, entry.value);
+        }, callback);
       });
     };
   };
@@ -127,7 +126,7 @@
         finished = false,
         i = 0;
 
-    for (; i < LIMIT; i++) {
+    for (; !finished && i < LIMIT; i++) {
       (function lookup(value, index, iterable) {
         iterate(value, index, iterable, function(error, result) {
           receive_count++;
@@ -146,7 +145,6 @@
           }
         });
       })(array[i], i, array);
-      if (finished) return;
     }
   };
 
@@ -191,7 +189,7 @@
         i = 0,
         x = init;
 
-    for (; i < LIMIT; i++, x += inc) {
+    for (; !finished && i < LIMIT; i++, x += inc) {
       iterate(x, i, array, function(error, result) {
         receive_count++;
         if (finished) {
@@ -208,7 +206,6 @@
          callback(undefined, array);
         }
       });
-      if (finished) return;
     }
   };
 
