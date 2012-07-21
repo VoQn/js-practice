@@ -1,12 +1,19 @@
 ;(function(root) {
   'use strict';
   var cps = {},
-      old_cps = root.cps;
+      old_cps = root.cps,
+      sort;
 
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = cps;
   } else {
     root.cps = cps;
+  }
+
+  if (require) {
+    sort = require('./sort');
+  } else {
+    sort = root.sort;
   }
 
   cps.noComflict = function() {
@@ -39,118 +46,74 @@
 
   cps.next = _next_process || _next_default;
 
-  cps.each = function(arr, acc, callback) {
-    var i = 0, c = 0, l = arr.length, finished = false;
-    for (; i < l; i++) {
-      acc(arr[i], i, function(error) {
-        if (finished) return;
+  cps.each = function(array, iterate, callback) {
+    var LIMIT = array.length,
+        receive_count = 0,
+        finished = false,
+        i = 0;
+
+    for (; i < LIMIT; i++) {
+      iterate(array[i], i, array, function(error) {
+        receive_count++;
+        if (finished) {
+          return;
+        }
         if (error) {
           finished = true;
           callback(error);
-          return;
+        } else if (receive_count >= LIMIT) {
+          finished = true;
+          callback();
         }
-        if (++c >= l) callback();
       });
       if (finished) return;
     }
   };
 
-  cps.nmap = function(arr, acc, callback) {
-    var i = 0, c = 0, l = arr.length, finished = false;
-    for (; i < l; i++) {
-      (function iterate(value, index) {
-        acc(value, index, function(error, result) {
-          if (finished) return;
-          if (error) {
-            finished = true;
-            callback(error);
-            return;
-          }
-          arr[index] = result;
-          if (++c >= l) callback(undefined, arr);
-        });
-      })(arr[i], i);
-      if (finished) return;
-    }
-  };
-
-  cps.map = function(arr, acc, callback) {
-    cps.nmap(arr.slice(), acc, callback);
-  };
-
-  var _cmp_num = function(a, b) {
-    return a - b;
-  };
-
-  var _ninsert_sort = function(arr, opt_cmp) {
-    var cmp = opt_cmp || cps._cmp_num;
-    for (var i = 1, l = arr.length; i < l; i++) {
-      var v = arr[i];
-      for (var j = i - 1; j >= 0; j--) {
-        if (cmp(arr[j], v) > 0) {
-          arr[j + 1] = arr[j];
+  cps.nmap = function(array, iterate, callback) {
+    cps.each(array, function(value, index, iterable, next) {
+      iterate(value, index, iterable, function(error, result) {
+        if (error) {
+          next(error);
         } else {
-          break;
+          iterable[index] = result;
+          next();
         }
-      }
-      arr[j + 1] = v;
-    }
+      });
+    }, function(error) {
+      callback(error, array);
+    });
   };
 
-  var _nquick_sort = function(arr, cmp) {
-    var stack = [0, arr.length - 1];
-    while (stack.length) {
-      var tail = stack.pop(),
-          head = stack.pop(),
-          pivot = arr[head + ((tail - head) >>> 1)],
-          i = head - 1,
-          j = tail + 1,
-          remain = true;
-      while (remain) {
-        while (cmp(arr[++i], pivot) < 0);
-        while (cmp(arr[--j], pivot) > 0);
-        if (i >= j) {
-          remain = false;
-        } else {
-          tmp = arr[i];
-          arr[i] = arr[j];
-          arr[j] = tmp;
-        }
-      }
-      if (head < i - 1) stack.concat([head, i - 1]);
-      if (j + 1 < tail) stack.concat([j + 1, tail]);
-    }
-    return arr;
+  cps.map = function(array, iterate, callback) {
+    cps.nmap(array.slice(), iterate, callback);
   };
 
   var _filter = function(evaluate) {
-    return function(arr, acc, callback) {
-      var j = 0, c = 0, finished = false, rs = [];
-      for (var i = 0, l = arr.length; i < l; i++) {
-        (function iterate(value, index) {
-          acc(value, index, function(error, result) {
-            if (finished) return;
-            if (error) {
-              finished = true;
-              callback(error);
-              return;
-            }
+    return function(array, iterate, callback) {
+      var hash_stack = [];
+      cps.each(array, function(value, index, iterable, next) {
+        iterate(value, index, iterable, function(error, result) {
+          if (error) {
+            next(error);
+          } else {
             if (evaluate(result)) {
-              rs[j++] = {index: index, value: value};
+              hash_stack.push({index: index, value: value});
             }
-            if (++c >= l) {
-              _nquick_sort(rs, function(a, b) {
-                return a.index - b.index;
-              });
-              for (var k = 0; k < j; k++) {
-                rs[k] = rs[k].value;
-              }
-              callback(undefined, rs);
-            }
-          });
-        })(arr[i], i);
-        if (finished) return;
-      }
+            next();
+          }
+        });
+      }, function(error) {
+        if (error) {
+          callback(error);
+        } else {
+          cps.map(sort.nquick(hash_stack, function(a, b) {
+            return a.index - b.index;
+          }), function(entry, index, iterable, next) {
+            next(undefined, entry.value);
+          }, callback);
+        }
+      });
     };
   };
 
@@ -158,71 +121,92 @@
 
   cps.reject = _filter(function(x) { return !x; });
 
-  cps.detect = function(arr, acc, callback) {
-    var c = 0, finished = false;
-    for (var i = 0, l = arr.length; i < l; i++) {
-      (function iterate(value, index) {
-        acc(value, index, function(error, result) {
-          if (finished) return;
+  cps.detect = function(array, iterate, callback) {
+    var LIMIT = array.length,
+        receive_count = 0,
+        finished = false,
+        i = 0;
+
+    for (; i < LIMIT; i++) {
+      (function lookup(value, index, iterable) {
+        iterate(value, index, iterable, function(error, result) {
+          receive_count++;
+          if (finished) {
+            return;
+          }
           if (error) {
             finished = true;
             callback(error);
-            return;
-          }
-          if (result) {
+          } else if (result) {
             finished = true;
             callback(undefined, value);
-            return;
+          } else if (receive_count >= LIMIT) {
+            finished = true;
+            callback();
           }
-          if (++c >= l) callback();
         });
-      })(arr[i], i);
+      })(array[i], i, array);
       if (finished) return;
     }
   };
 
-  cps.reduce = function(arr, acc, callback, opt_init) {
-    if (arguments.length < 4 && arr.length < 1) {
+  cps.nreduce = function(array, accumulate, callback, opt_init) {
+    if (arguments.length < 4 && array.length < 1) {
       callback(new TypeError(
             'Array length is 0 and no init value'));
       return;
     }
-    var r = opt_init || arr.shift(),
-        c = 0, finished = false;
-    for (var i = 0, l = arr.length; i < l; i++) {
-      acc(r, arr[i], i, function(error, result) {
-        if (finished) return;
+    var memo = arguments.length > 3 ? opt_init : array.shift();
+
+    cps.each(array, function(value, index, iterable, next) {
+      accumulate(memo, value, index, iterable, function(error, result) {
         if (error) {
-          finished = true;
-          callback(error);
-          return;
+          next(error);
+        } else {
+          memo = result;
+          next();
         }
-        r = result;
-        if (++c >= l) callback(undefined, r);
       });
-      if (finished) return;
-    }
+    }, function(error) {
+      callback(error, memo);
+    });
   };
 
-  cps.fromTo = function(arr, acc, callback) {
-    var ini = Math.round(arr[0]),
-        end = Math.round(arr[1]),
-        incv = arr.length > 2 ? Math.abs(arr[2]) : 1,
-        inc = (end - ini >= 0) ? incv : (-incv),
-        c = 0,
-        l = Math.abs(end - ini) / incv + 1,
+  cps.reduce = function(array, accumulate, callback, opt_init) {
+    cps.nreduce.apply(
+        undefined,
+        [array.slice()].concat(__slice.call(arguments, 1)));
+  };
+
+  cps.fromTo = function(params, iterate, callback) {
+    var init = Math.round(params[0]),
+        end = Math.round(params[1]),
+        unit = params.length > 2 ? Math.abs(params[2]) : 1,
+        inc = (end - init >= 0) ? unit : (-unit),
+
+        LIMIT = Math.abs(end - init) / unit + 1,
+        receive_count = 0,
         finished = false,
-        rs = [];
-    for (var i = 0, x = ini; i < l; i++, x += inc) {
-      acc(x, i, function(error, result) {
-        if (finished) return;
+        array = [],
+        i = 0,
+        x = init;
+
+    for (; i < LIMIT; i++, x += inc) {
+      iterate(x, i, array, function(error, result) {
+        receive_count++;
+        if (finished) {
+          return;
+        }
         if (error) {
           finished = true;
           callback(error);
           return;
         }
-        rs[c++] = result;
-        if (c >= l) callback(undefined, rs);
+        array.push(result);
+        if (receive_count >= LIMIT) {
+         finished = true;
+         callback(undefined, array);
+        }
       });
       if (finished) return;
     }

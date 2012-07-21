@@ -1,7 +1,7 @@
 ;(function(root) {
   var trampoline = {},
       old_trampoline = root.trampoline,
-      cps;
+      cps, sort;
 
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = trampoline;
@@ -11,8 +11,10 @@
 
   if (require) {
     cps = require('./cps');
+    sort = require('./sort');
   } else {
     cps = root.cps;
+    sort = root.sort;
   }
 
   trampoline.noComflict = function() {
@@ -28,144 +30,125 @@
 
   var __slice = Array.prototype.slice;
 
+  var _is_context_remain = function(context) {
+    return context && typeof context.func === 'function';
+  };
+
+  var _time_slice;
+
   var _trampoline = function(context) {
-    var remain = context !== undefined &&
-                 typeof context.func === 'function',
-        time_stamp = _now(),
-        limit = time_stamp + trampoline.TIME_SLICE;
-    while (remain && time_stamp < limit) {
-      context = context.args ?
-        context.func.apply(null, context.args) :
-        context.func();
-      time_stamp = _now();
-      remain = context !== undefined &&
-               typeof context.func === 'function';
+    _time_slice = _now() + trampoline.TIME_SLICE;
+    while (context && _now() < _time_slice) {
+      context = context.func.apply(null, context.args || []);
     }
-    if (remain) {
+    if (context) {
       cps.next(_trampoline, context);
     }
   };
 
   trampoline.call = function(fn_context) {
     return function(var_args) {
-      var args = __slice.call(arguments);
-      _trampoline({func: fn_context, args: args});
+      _trampoline({func: fn_context, args: __slice.call(arguments)});
     };
   };
 
-  var _each_context = function(arr, acc, callback) {
-    var i = 0, c = 0, l = arr.length,
-        context, err = undefined, finished = false,
-        iter = function() {
-          context = acc(arr[i], i, function(error) {
-            c++;
-            err = error;
-            return loop_;
-          });
-          i++;
-          return context || loop_;
+  var _each_context = function(array, iterate, callback) {
+    var array_index = 0,
+        received_count = 0,
+        limit = array.length,
+        finished = false,
+        received_error = undefined,
+
+        accumulate = function(value, index) {
+          array_index++;
+          return iterate(value, index, function(error) {
+            received_count++;
+            if (error) {
+              received_error = error;
+            }
+            return loop_context;
+          }) || loop_context;
         },
+
         loop = function() {
-          if (finished) return;
-          if (err) {
-            finished = true;
-            return callback(err);
+          if (finished) {
+            return;
           }
-          if (c >= l) {
+          if (received_error || received_count >= limit) {
             finished = true;
-            return callback();
+            return callback(received_error);
           }
-          if (i < l) return iter_;
-          return loop_;
+          if (array_index < limit) {
+            accumulate_context.args[0] = array[array_index];
+            accumulate_context.args[1] = array_index;
+            return accumulate_context;
+          }
+          return loop_context;
         },
-        iter_ = {func: iter},
-        loop_ = {func: loop};
-    return loop_;
+
+        accumulate_context = {func: accumulate, args: []},
+        loop_context = {func: loop};
+
+    return loop_context;
   };
 
   trampoline.each = trampoline.call(_each_context);
 
-  var _map_context = function(arr, acc, callback) {
-    var i = 0, c = 0, l = arr.length, context,
-        err = undefined, finished = false, rs = [],
-        iter = function() {
-          var j = i;
-          context = acc(arr[i], i, function(error, result) {
+  var _nmap_context = function(array, iterate, callback) {
+    return _each_context(array,
+        function(value, index, next) {
+          return iterate(value, index, function(error, result) {
             if (error) {
-              err = error;
-            } else {
-              rs[j] = result;
+              return next(error);
             }
-            c++;
-            return loop_;
+            array[index] = result;
+            return next();
           });
-          i++;
-          return context || loop_;
         },
-        loop = function() {
-          if (finished) return;
-          if (err) {
-            finished = true;
-            return callback(err);
-          }
-          if (c >= l) {
-            finished = true;
-            return callback(err, rs);
-          }
-          if (i < l) return iter_;
-          return loop_;
-        },
-        iter_ = {func: iter},
-        loop_ = {func: loop};
-    return loop_;
+        function(error) {
+          return callback(error, array);
+        });
   };
 
+  var _map_context = function(arr, acc, callback) {
+    return _nmap_context(arr.slice(), acc, callback);
+  };
+
+  trampoline.nmap = trampoline.call(_nmap_context);
   trampoline.map = trampoline.call(_map_context);
 
+  var _compare_by_index = function(a, b) {
+    return a.index - b.index;
+  };
+
+  var _pass_value = function(entry, index, next) {
+    return next(undefined, entry.value);
+  };
+
   var _filter_context = function(evaluate) {
-    return function(arr, acc, callback) {
-      var i = 0, j = 0, c = 0, l = arr.length, context,
-          err = undefined, finished = false, rs = [],
-          byIndex = function(a, b) {
-            return a.index - b.index;
-          },
-          passValue = function(x, k, next) {
-            return next(null, x.value);
-          },
-          iter = function() {
-            var x = {index: i, value: arr[i]};
-            context = acc(x.value, x.index, function(error, result) {
+    return function(array, iterate, callback) {
+      var filtered = [];
+      return _each_context(array,
+          function(value, index, next) {
+            return iterate(value, index, function(error, result) {
               if (error) {
-                err = error;
-              } else if (evaluate(result)) {
-                rs[j++] = x;
+                return next(error);
               }
-              c++;
-              return loop_;
+              if (evaluate(result)) {
+                filtered.push({index: index, value: value});
+              }
+              return next();
             });
-            i++;
-            return context || loop_;
           },
-          sort = function() {
-            trampoline.map(rs.sort(byIndex), passValue, callback);
-          },
-          loop = function() {
-            if (finished) return;
-            if (err) {
-              finished = true;
-              return callback(err);
+          function(error) {
+            if (error) {
+              return callback(error);
             }
-            if (c >= l) {
-              finished = true;
-              return sort_;
-            }
-            if (i < l) return iter_;
-            return loop_;
-          },
-          iter_ = {func: iter},
-          sort_ = {func: sort},
-          loop_ = {func: loop};
-      return loop_;
+            return trampoline.nmap(
+                     sort.nquick(filtered, _compare_by_index),
+                     _pass_value,
+                     callback);
+          });
     };
   };
 
@@ -175,126 +158,129 @@
   trampoline.filter = trampoline.call(_filter_context(_id));
   trampoline.reject = trampoline.call(_filter_context(_not));
 
-  var _detect_context = function(arr, acc, callback) {
-    var i = 0, c = 0, l = arr.length,
-        err = undefined, found = false, finished = false, res,
-        iter = function() {
-          var x = arr[i],
-          context = acc(x, i, function(error, result) {
+  var _detect_context = function(array, iterate, callback) {
+    var array_index = 0,
+        received_count = 0,
+        limit = array.length,
+        is_found = false,
+        finished = false,
+
+        received_error = undefined,
+        it = undefined,
+
+        accumulate = function(value, index) {
+          array_index++;
+          return iterate(value, index, function(error, result) {
+            received_count++;
             if (error) {
-              err = error;
+              received_error = error;
             } else if (result) {
-              found = true;
-              res = x;
+              is_found = true;
+              it = value;
             }
-            c++;
-            return loop_;
-          });
-          i++;
-          return context || loop_;
+            return loop_context;
+          }) || loop_context;
         },
         loop = function() {
-          if (finished) return;
-          if (err || found || c >= l) {
-            finished = true;
-            return callback(err, res);
+          if (finished) {
+            return;
           }
-          if (i < l) return iter_;
-          return loop_;
+          if (received_error || is_found || received_count >= limit) {
+            finished = true;
+            return callback(received_error, it);
+          }
+          if (array_index < limit) {
+            accumulate_context.args[0] = array[array_index];
+            accumulate_context.args[1] = array_index;
+            return accumulate_context;
+          }
+          return loop_context;
         },
-        iter_ = {func: iter},
-        loop_ = {func: loop};
-    return loop_;
+
+        accumulate_context = {func: accumulate, args: []},
+        loop_context = {func: loop};
+
+    return loop_context;
   };
 
   trampoline.detect = trampoline.call(_detect_context);
 
-  var _fromTo_context = function(arr, acc, callback) {
-    var ini = Math.round(arr[0]),
-        end = Math.round(arr[1]),
-        incv = arr.length > 2 ? Math.abs(arr[2]) : 1,
+  var _fromTo_context = function(param, iterate, callback) {
+    var ini = Math.round(param[0]),
+        end = Math.round(param[1]),
+        incv = param.length > 2 ? Math.abs(param[2]) : 1,
         inc = (end - ini >= 0) ? incv : (-incv),
-        i = 0, c = 0, l = Math.abs(end - ini) / incv + 1,
-        err = undefined, finished = false, rs = [],
-        x = ini,
-        iter = function() {
-          var j = i,
-          context = acc(x, i, function(error, result) {
+        memo = ini,
+
+        array_index = 0,
+        received_count = 0,
+        limit = Math.abs(end - ini) / incv + 1,
+        finished = false,
+
+        received_error,
+        array = [],
+
+        accumulate = function(value, index) {
+          memo += inc;
+          array_index++;
+          return iterate(value, index, function(error, result) {
             if (error) {
-              err = error;
+              received_error = error;
             } else {
-              rs[j] = result;
+              array[index] = result;
             }
-            c++;
-            return loop_;
-          });
-          i++;
-          x += inc;
-          return context || loop_;
+            received_count++;
+            return loop_context;
+          }) || loop_context;
         },
+
         loop = function() {
           if (finished) return;
-          if (err) {
+          if (received_error || received_count >= limit) {
             finished = true;
-            return callback(err);
+            return callback(received_error, array);
           }
-          if (c >= l) {
-            finished = true;
-            return callback(err, rs);
+          if (array_index < limit) {
+            accumulate_context.args[0] = memo;
+            accumulate_context.args[1] = array_index;
+            return accumulate_context;
           }
-          if (i < l) return iter_;
-          return loop_;
+          return loop_context;
         },
-        iter_ = {func: iter},
-        loop_ = {func: loop};
-    return loop_;
+
+        accumulate_context = {func: accumulate, args: []},
+        loop_context = {func: loop};
+
+    return loop_context;
   };
 
   trampoline.fromTo = trampoline.call(_fromTo_context);
 
-  var _reduce_context = function(arr, acc, callback, opt_init) {
-    if (arguments.length < 4 && arr.length < 1) {
+  var _nreduce_context = function(array, iterate, callback, opt_init) {
+     if (arguments.length < 4 && array.length < 1) {
       return callback(new TypeError('Array length is 0 and no init value'));
     }
-    var r = opt_init || arr.shift(),
-        i = 0, c = 0, l = arr.length,
-        err = undefined, finished = false,
-        iter = function() {
-          var context = acc(r, arr[i], i, function(error, result) {
-            if (error) {
-              err = error;
-            } else {
-              r = result;
-            }
-            c++;
-            return loop_;
+    var memo = arguments.length > 4 ? opt_init : array.shift();
+    return _each_context(array,
+        function(value, index, next) {
+          return iterate(memo, value, index, function(error, result) {
+              if (error) {
+                return next(error);
+              }
+              memo = result;
+              return next();
           });
-          i++;
-          if (context) {
-            return context;
-          }
-          return loop_;
         },
-        loop = function() {
-          if (finished) return;
-          if (err) {
-            finished = true;
-            return callback(err);
-          }
-          if (c >= l) {
-            finished = true;
-            return callback(err, r);
-          }
-          if (i < l) {
-            return iter_;
-          }
-          return loop_;
-        },
-        iter_ = {func: iter},
-        loop_ = {func: loop};
-    return loop_;
+        function(error) {
+          return callback(error, memo);
+        });
   };
 
+  var _reduce_context = function(array, iterate, callback, opt_init) {
+    return _nreduce_context(array.slice(), iterate, callback, opt_init);
+  };
+
+  trampoline.nreduce = trampoline.call(_nreduce_context);
   trampoline.reduce = trampoline.call(_reduce_context);
 
 })(this);
