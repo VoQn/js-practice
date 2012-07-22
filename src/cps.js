@@ -107,7 +107,7 @@
           callback(error);
           return;
         }
-        cps.map(sort.nquick(hash_stack, function(a, b) {
+        cps.nmap(sort.nquick(hash_stack, function(a, b) {
             return a.index - b.index;
         }), function(entry, index, iterable, next) {
             next(undefined, entry.value);

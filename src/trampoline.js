@@ -30,10 +30,6 @@
 
   var __slice = Array.prototype.slice;
 
-  var _is_context_remain = function(context) {
-    return context && typeof context.func === 'function';
-  };
-
   var _time_slice;
 
   var _trampoline = function(context) {
@@ -48,7 +44,10 @@
 
   trampoline.call = function(fn_context) {
     return function(var_args) {
-      _trampoline({func: fn_context, args: __slice.call(arguments)});
+      cps.next(_trampoline, {
+        func: fn_context,
+        args: __slice.call(arguments)
+      });
     };
   };
 
@@ -260,24 +259,25 @@
      if (arguments.length < 4 && array.length < 1) {
       return callback(new TypeError('Array length is 0 and no init value'));
     }
-    var memo = arguments.length > 4 ? opt_init : array.shift();
-    return _each_context(array,
-        function(value, index, next) {
-          return iterate(memo, value, index, function(error, result) {
-              if (error) {
-                return next(error);
-              }
-              memo = result;
-              return next();
-          });
-        },
-        function(error) {
-          return callback(error, memo);
-        });
+    var memo = arguments.length > 3 ? opt_init : array.shift();
+
+    return _each_context(array, function(value, index, next) {
+      return iterate(memo, value, index, function(error, result) {
+        if (error) {
+          return next(error);
+        }
+        memo = result;
+        return next();
+      });
+    }, function(error) {
+      return callback(error, memo);
+    });
   };
 
   var _reduce_context = function(array, iterate, callback, opt_init) {
-    return _nreduce_context(array.slice(), iterate, callback, opt_init);
+    return _nreduce_context.apply(
+        undefined,
+        [array.slice()].concat(__slice.call(arguments, 1)));
   };
 
   trampoline.nreduce = trampoline.call(_nreduce_context);
