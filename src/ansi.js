@@ -1,64 +1,66 @@
-'use strict';
+;(function(root) {
 
-/** @const {string} */
-var PREFIX = '\u001b';
+  'use strict';
+  var ansi = {},
+      old_ansi = root.ansi;
 
-/** @enum {number} */
-var COLOR = {
-  BLACK: 30,
-  RED: 31,
-  GREEN: 32,
-  YELLOW: 33,
-  BLUE: 34,
-  PURPLE: 35,
-  CYAN: 36,
-  GRAY: 37,
-  WHITE: 38
-};
-
-var OPTION = {
-  BRIGHT: 1,
-  REVERSE: 7
-};
-
-/** @enum {string} */
-var MARK_CHAR = {
-  PASSED: '\u2713',
-  FAILED: '\u2718',
-  SUN: '\u2600',
-  CLOUD: '\u2601',
-  RAIN: '\u2602'
-};
-
-/**
- * @param {string} str expression.
- * @param {number} color ANSI color code.
- * @param {number=} option ANSI decoration code.
- * @return {string} ANSI colored text.
- */
-function wrap(str, color, option) {
-  function codeMake(c) {
-    return PREFIX + '[' + c + 'm';
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = ansi;
+  } else {
+    root.ansi = ansi;
   }
-  return codeMake(color) + (option ? codeMake(option) : '') +
-         str +
-         codeMake(0);
-}
 
-if (typeof exports !== 'undefined') {
-  /** @type {string} */
-  exports.PREFIX = PREFIX;
+  ansi.noConflict = function() {
+    root.ansi = old_ansi;
+    return ansi;
+  };
 
-  /** @type {Object.<string, number>} */
-  exports.COLOR = COLOR;
+  /** @const {string} */
+  ansi.PREFIX = '\u001b';
 
-  /** @type {Object.<string, number}>} */
-  exports.OPTION = OPTION;
+  /** @enum {number} */
+  ansi.COLOR = {
+    BLACK: 30,
+    RED: 31,
+    GREEN: 32,
+    YELLOW: 33,
+    BLUE: 34,
+    PURPLE: 35,
+    CYAN: 36,
+    GRAY: 37,
+    WHITE: 38
+  };
 
-  /** @type {Object.<string, string>} */
-  exports.MARK_CHAR = MARK_CHAR;
+  ansi.OPTION = {
+   BRIGHT: 1,
+   REVERSE: 7
+ };
 
-  /** @type {function(string, string): string} */
-  exports.wrap = wrap;
-}
+ /** @enum {string} */
+ ansi.MARK_CHAR = {
+   PASSED: '\u2713',
+   FAILED: '\u2718',
+   SUN: '\u2600',
+   CLOUD: '\u2601',
+   RAIN: '\u2602'
+ };
+
+ var _codeMake = function(codeKey) {
+   return ansi.PREFIX + '[' + codeKey + 'm';
+ };
+
+ /**
+  * @param {string} str expression.
+  * @param {number} color ANSI color code.
+  * @param {number=} option ANSI decoration code.
+  * @return {string} ANSI colored text.
+  */
+ ansi.wrap = function(str, color, option) {
+  return _codeMake(color) +
+    (option ? _codeMake(option) : '') +
+    str +
+    _codeMake(0);
+ };
+
+})(this);
 // EOF
