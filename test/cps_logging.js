@@ -8,7 +8,8 @@
     cps = root.cps;
   }
 
-  var _limit = process.argv.length > 2 ? process.argv[2] : 1e+3;
+  var _limit = process.argv.length > 2 ? ~~process.argv[2] : 1e+3,
+      _plot_mode = false;
 
   var _quoter = _limit / 4,
       _date = new Date(),
@@ -32,7 +33,7 @@
         return t + 'ms';
       },
       print_cloud = function(label, time, i, d) {
-        console.log(
+        cps.next(console.log,
             '\u001b[1m\u2601\u001b[0m' +
             '  <- \u001b[34m' + label +
             ' [' + i + ']\u001b[0m' +
@@ -58,26 +59,18 @@
         _interval_t = time;
       },
       prints = function(printer, label, time, index, delay) {
+        if (!_plot_mode) return;
         if (time - _time_stamp > 16) {
           printer(label, time, index, delay);
           _time_stamp = time;
         }
       },
       printItr = function(label, value, i, next) {
-        //var d = _random(16, 33);
-        //if (i > 0 && i % _quoter === 0) {
-        //  print_cloud(label, _now(), i);
-        //}
-        //setTimeout(function() {
-        //  if (i === 1 || i > 0 && i % _quoter === 0) {
-        //    print_rain(label, i);
-        //  }
-        //prints(print_rain, label, _now(), i);
+        prints(print_rain, label, _now(), i);
         next(null, value);
-        //}, d);
       },
       sampleItr = function(label, f) {
-        return function(x, i, a, next) {
+        return function(x, i, next) {
           printItr(label, f(x, i), i, next);
         };
       },
@@ -103,6 +96,9 @@
   };
 
   console.log('test ' + _limit + ' length array loop, ready ...');
+  _start_t = _now();
+  _interval_t = _start_t;
+  _time_stamp = _start_t;
 
   parallel_label('fromTo');
 
@@ -115,7 +111,10 @@
       parallel_label('each  ');
 
       cps.each(arr,
-          sampleItr('each  ', _id),
+          function(value, index, next) {
+            prints(print_rain, 'each  ', _now(), index);
+            next();
+          },
           sampleAft('each  '));
 
       parallel_label('map   ');
@@ -146,11 +145,11 @@
 
       parallel_label('reduce');
 
-      cps.reduce(arr,
-          function(r, x, i, a, next) {
+      cps.reduce(arr, function(r, x, i, next) {
             printItr('reduce', r + 1 / x, i, next);
-          },
-          sampleAft('reduce'));
+          }, function(error, results) {
+            print_sun('reduce', _now(), results);
+          });
 
     });
 })(this);

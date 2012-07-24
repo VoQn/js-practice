@@ -1,16 +1,18 @@
 ;(function(root) {
   'use strict';
-  var trampoline, cps;
+  var trampoline, cps, ansi;
 
   if (require) {
     trampoline = require('../src/trampoline');
     cps = require('../src/cps');
+    ansi = require('../src/ansi');
   } else {
     trampoline = root.trampoline;
     cps = root.cps;
   }
 
-  var _limit = process.argv.length > 2 ? process.argv[2] : 1e+3;
+  var _limit = process.argv.length > 2 ? ~~process.argv[2] : 1e+3,
+      _prot_mode = true;
 
   var _quoter = _limit / 4,
       _date = new Date(),
@@ -40,26 +42,28 @@
             ' [' + i + ']\u001b[0m' +
             (d ? (' \u2708  ' + _time_expr(d) + ' ') : ' '));
       },
+      _rain_mark = ansi.wrap('\u2602', ansi.COLOR.CYAN, ansi.OPTION.BRIGHT),
       print_rain = function(label, time, i, d) {
-        console.log('\u001b[36m\u001b[1m\u2602\u001b[0m' +
-            '  -> \u001b[36m' + label +
-            ' [' + i + ']\u001b[0m' +
+        console.log(
+            _rain_mark + '  -> ' +
+            ansi.wrap(label + ' [' + i + ']', ansi.COLOR.CYAN) +
             (d ? (' \u2708  ' + _time_expr(d) + ' ') : ' '));
       },
       print_sun = function(label, time, data) {
         var expr = isArray(data) && data.length > 9 ?
-          data.length + ' length array [ ' +
-          data.slice(0, 9) + ', ... ]' :
+          '[ ' + data.slice(0, 9) + ', ... ] array[' + data.length + ']' :
           data;
-        console.log('\u001b[33m\u001b[1m\u2600\u001b[0m  -> ' +
-              '\u001b[33m' + label + ' done\u001b[0m' +
-              ' time: ' + _time_expr(time - _start_t) +
-              (data ?
-               '\n\u001b[33mresult: \u001b[1m' + expr + '\u001b[0m' :
-               ' '));
+        console.log(
+            '\u001b[33m\u001b[1m\u2600\u001b[0m  -> ' +
+            '\u001b[33m' + label + ' done\u001b[0m' +
+            ' time: ' + _time_expr(time - _start_t) +
+            (data ?
+              '\n\u001b[33mresult: \u001b[1m' + expr + '\u001b[0m' :
+              ' '));
         _interval_t = time;
       },
       prints = function(printer, label, time, index, delay) {
+        if (!_prot_mode) return;
         if (time - _time_stamp > trampoline.TIME_SLICE) {
           printer(label, time, index, delay);
           _time_stamp = time;
@@ -116,37 +120,40 @@
 
       parallel_label('each  ');
 
-      trampoline.each(arr,
-          sampleItr('each  ', _id),
+      cps.next(trampoline.each, arr,
+          function(value, index, next) {
+            prints(print_rain, 'each  ', _now(), index);
+            return next();
+          },
           sampleAft('each  '));
 
       parallel_label('map   ');
 
-      trampoline.map(arr,
+      cps.next(trampoline.map, arr,
         sampleItr('map   ', function(x) { return x * x; }),
         sampleAft('map   '));
 
       parallel_label('nmap  ');
 
-      trampoline.nmap(arrcopy,
+      cps.next(trampoline.nmap, arrcopy,
         sampleItr('nmap  ', function(x) { return 3 * x; }),
         sampleAft('nmap  '));
 
       parallel_label('filter');
 
-      trampoline.filter(arr,
+      cps.next(trampoline.filter, arr,
         sampleItr('filter', _even),
         sampleAft('filter'));
 
       parallel_label('reject');
 
-      trampoline.reject(arr,
+      cps.next(trampoline.reject, arr,
         sampleItr('reject', _even),
         sampleAft('reject'));
 
       parallel_label('detect');
 
-      trampoline.detect(arr,
+      cps.next(trampoline.detect, arr,
           sampleItr('detect', function(x, i) {
             return i >= arr.length / 2 && _odd(x);
           }),
@@ -154,7 +161,7 @@
 
       parallel_label('reduce');
 
-      trampoline.reduce(arr,
+      cps.next(trampoline.reduce, arr,
           function(r, x, i, next) {
             printItr('reduce', r + (1 / x), i, next);
           },
