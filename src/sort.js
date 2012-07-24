@@ -18,18 +18,20 @@
   };
 
   sort.ninsert = function(arr, opt_cmp) {
-    var cmp = opt_cmp || cps._cmp_num;
-    for (var i = 1, l = arr.length; i < l; i++) {
-      var v = arr[i];
-      for (var j = i - 1; j >= 0; j--) {
-        if (cmp(arr[j], v) > 0) {
+    var cmp = opt_cmp || _cmp_num,
+        i = 1, j = i - 1, l = arr.length, value;
+    for (; i < l; i++) {
+      value = arr[i];
+      for (j = i - 1; j >= 0; j--) {
+        if (cmp(arr[j], value) > 0) {
           arr[j + 1] = arr[j];
         } else {
           break;
         }
       }
-      arr[j + 1] = v;
+      arr[j + 1] = value;
     }
+    return arr;
   };
 
   sort.nquick = function(arr, cmp) {
