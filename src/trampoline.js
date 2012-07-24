@@ -9,7 +9,7 @@
     root.trampoline = trampoline;
   }
 
-  if (require) {
+  if (typeof require === 'function') {
     cps = require('./cps');
     sort = require('./sort');
   } else {
@@ -30,11 +30,9 @@
 
   var __slice = Array.prototype.slice;
 
-  var _time_slice;
-
   var _trampoline = function(context) {
-    _time_slice = _now() + trampoline.TIME_SLICE;
-    while (context && _now() < _time_slice) {
+    var time_slice = _now() + trampoline.TIME_SLICE;
+    while (context && _now() < time_slice) {
       context = context.func.apply(null, context.args || []);
     }
     if (context) {
@@ -44,7 +42,7 @@
 
   trampoline.call = function(fn_context) {
     return function(var_args) {
-      cps.next(_trampoline, {
+      _trampoline({
         func: fn_context,
         args: __slice.call(arguments)
       });
@@ -57,6 +55,7 @@
         limit = array.length,
         finished = false,
         received_error = undefined,
+        received_somethings = undefined,
 
         accumulate = function(value, index) {
           array_index++;
@@ -64,6 +63,9 @@
             received_count++;
             if (error) {
               received_error = error;
+            }
+            if (arguments.length > 1) {
+              received_somethings = __slice.call(arguments, 1);
             }
             return loop_context;
           }) || loop_context;
@@ -73,9 +75,18 @@
           if (finished) {
             return;
           }
-          if (received_error || received_count >= limit) {
+          if (received_error) {
             finished = true;
             return callback(received_error);
+          }
+          if (received_somethings) {
+            finished = true;
+            return callback.apply(undefined,
+                [undefined].concat(received_somethings));
+          }
+          if (received_count >= limit) {
+            finished = true;
+            return callback();
           }
           if (array_index < limit) {
             accumulate_context.args[0] = array[array_index];
@@ -94,19 +105,15 @@
   trampoline.each = trampoline.call(_each_context);
 
   var _nmap_context = function(array, iterate, callback) {
-    return _each_context(array,
-        function(value, index, next) {
-          return iterate(value, index, function(error, result) {
-            if (error) {
-              return next(error);
-            }
-            array[index] = result;
-            return next();
-          });
-        },
-        function(error) {
-          return callback(error, array);
-        });
+    return _each_context(array, function(value, index, next) {
+      return iterate(value, index, function(error, result) {
+        if (error) {
+          return next(error);
+        }
+        array[index] = result;
+        return index >= array.length - 1 ? next(undefined, array) : next();
+      });
+    }, callback);
   };
 
   var _map_context = function(arr, acc, callback) {
@@ -127,27 +134,23 @@
   var _filter_context = function(evaluate) {
     return function(array, iterate, callback) {
       var filtered = [];
-      return _each_context(array,
-          function(value, index, next) {
-            return iterate(value, index, function(error, result) {
-              if (error) {
-                return next(error);
-              }
-              if (evaluate(result)) {
-                filtered.push({index: index, value: value});
-              }
-              return next();
-            });
-          },
-          function(error) {
-            if (error) {
-              return callback(error);
-            }
-            return trampoline.nmap(
-                     sort.nquick(filtered, _compare_by_index),
-                     _pass_value,
-                     callback);
-          });
+      return _each_context(array, function(value, index, next) {
+        return iterate(value, index, function(error, result) {
+          if (error) {
+            return next(error);
+          }
+          if (evaluate(result)) {
+            filtered.push({index: index, value: value});
+          }
+          return index >= array.length - 1 ? next(undefined, filtered) : next();
+        });
+      }, function(error, results) {
+        if (error) {
+          return callback(error);
+        }
+        sort.nquick(results, _compare_by_index);
+        return trampoline.nmap(results, _pass_value, callback);
+      });
     };
   };
 
@@ -158,48 +161,14 @@
   trampoline.reject = trampoline.call(_filter_context(_not));
 
   var _detect_context = function(array, iterate, callback) {
-    var array_index = 0,
-        received_count = 0,
-        limit = array.length,
-        is_found = false,
-        finished = false,
-
-        received_error = undefined,
-        it = undefined,
-
-        accumulate = function(value, index) {
-          array_index++;
-          return iterate(value, index, function(error, result) {
-            received_count++;
-            if (error) {
-              received_error = error;
-            } else if (result) {
-              is_found = true;
-              it = value;
-            }
-            return loop_context;
-          }) || loop_context;
-        },
-        loop = function() {
-          if (finished) {
-            return;
-          }
-          if (received_error || is_found || received_count >= limit) {
-            finished = true;
-            return callback(received_error, it);
-          }
-          if (array_index < limit) {
-            accumulate_context.args[0] = array[array_index];
-            accumulate_context.args[1] = array_index;
-            return accumulate_context;
-          }
-          return loop_context;
-        },
-
-        accumulate_context = {func: accumulate, args: []},
-        loop_context = {func: loop};
-
-    return loop_context;
+    return _each_context(array, function(value, index, next) {
+      return iterate(value, index, function(error, result) {
+        if (error) {
+          return next(error);
+        }
+        return result ? next(undefined, value) : next();
+      });
+    }, callback);
   };
 
   trampoline.detect = trampoline.call(_detect_context);
@@ -223,18 +192,20 @@
           memo += inc;
           array_index++;
           return iterate(value, index, function(error, result) {
+            received_count++;
             if (error) {
               received_error = error;
             } else {
               array[index] = result;
             }
-            received_count++;
             return loop_context;
           }) || loop_context;
         },
 
         loop = function() {
-          if (finished) return;
+          if (finished) {
+            return;
+          }
           if (received_error || received_count >= limit) {
             finished = true;
             return callback(received_error, array);
@@ -256,7 +227,7 @@
   trampoline.fromTo = trampoline.call(_fromTo_context);
 
   var _nreduce_context = function(array, iterate, callback, opt_init) {
-     if (arguments.length < 4 && array.length < 1) {
+    if (arguments.length < 4 && array.length < 1) {
       return callback(new TypeError('Array length is 0 and no init value'));
     }
     var memo = arguments.length > 3 ? opt_init : array.shift();
@@ -267,11 +238,9 @@
           return next(error);
         }
         memo = result;
-        return next();
+        return index >= array.length - 1 ? next(undefined, memo) : next();
       });
-    }, function(error) {
-      return callback(error, memo);
-    });
+    }, callback);
   };
 
   var _reduce_context = function(array, iterate, callback, opt_init) {
