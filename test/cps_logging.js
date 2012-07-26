@@ -71,6 +71,9 @@
       },
       sampleItr = function(label, f) {
         return function(x, i, next) {
+          //var delay = Math.ceil(Math.random() * 1000);
+          //prints(print_cloud, label, _now(), i, delay);
+          //setTimeout(printItr, delay, label, f(x, i), i, next);
           printItr(label, f(x, i), i, next);
         };
       },
@@ -96,26 +99,24 @@
   };
 
   console.log('test ' + _limit + ' length array loop, ready ...');
+
   _start_t = _now();
   _interval_t = _start_t;
   _time_stamp = _start_t;
 
   parallel_label('fromTo');
 
-  cps.fromTo([1, _limit],
-    sampleItr('fromTo', _id),
+  cps.fromTo([1, _limit], sampleItr('fromTo', _id),
     function(err, arr) {
 
       print_sun('fromTo', _now(), arr);
 
       parallel_label('each  ');
 
-      cps.each(arr,
-          function(value, index, next) {
-            prints(print_rain, 'each  ', _now(), index);
-            next();
-          },
-          sampleAft('each  '));
+      cps.each(arr, function(value, index, next) {
+        prints(print_rain, 'each  ', _now(), index);
+        next();
+      }, sampleAft('each  '));
 
       parallel_label('map   ');
 
@@ -137,19 +138,15 @@
 
       parallel_label('detect');
 
-      cps.detect(arr,
-          sampleItr('detect', function(x, i) {
-            return i >= arr.length / 2 && _odd(x);
-          }),
-          sampleAft('detect'));
+      cps.detect(arr, sampleItr('detect', function(x, i) {
+        return i >= arr.length / 2 && _odd(x);
+      }), sampleAft('detect'));
 
       parallel_label('reduce');
 
       cps.reduce(arr, function(r, x, i, next) {
-            printItr('reduce', r + 1 / x, i, next);
-          }, function(error, results) {
-            print_sun('reduce', _now(), results);
-          });
+        printItr('reduce', r + 1 / x, i, next);
+      }, sampleAft('reduce'));
 
     });
 })(this);
